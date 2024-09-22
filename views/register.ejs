@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bootstrap 5 Login Form Example</title>
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="font/bootstrap-icons.css" />
+  <script src="./javascripts/selectPlaceholder.js"></script>
+  <script>
+    /*TODO prevent submission of form with placeholder values in select*/
+    function checkPassword(event) {
+    }
+  </script>
+
+</head>
+
+<body>
+  <div class="container-fluid vh-100" style="margin-top:10px">
+    <div class="" style="margin-top:100px">
+      <div class="rounded d-flex justify-content-center">
+        <div class="col-md-4 col-sm-12 shadow-lg p-5 bg-light">
+          <div class="text-center">
+            <h3 class="text-primary">Register New Account</h3>
+          </div>
+          <form onSubmit="return checkPassword(event);" method="post">
+            <div class="p-4">
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary">
+                  <i class="bi bi-person-vcard-fill text-white"></i>
+                </span>
+                <input id="username" name="username" type="text" class="form-control" placeholder="Username">
+              </div>
+              <!--New fields begin here-->
+              <!--Name--> <!--TODO does client want a username, email, and legal name? (what does "Name" refer to in SR?)-->
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary">
+                  <i class="bi bi-person-plus-fill text-white"></i>
+                </span>
+                <input id="name" name="name" type="text" class="form-control" placeholder="Your Name">
+              </div>
+              <!--Email-->
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary">
+                  <i class="bi bi-envelope-at-fill text-white"></i>
+                </span>
+                <input id="email" name="email" type="email" class="form-control" placeholder="Your Email">
+              </div>
+              <!--Gender-->
+              <!--
+              NOTE: specified as (by my assumption) radio buttons, but I went for a drop-down
+              because I thought it was cleaner.
+              -->
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary">
+                  <i class="bi bi-gender-trans text-white"></i>
+                </span>
+                <select class="form-select text-muted" id="gender" name="gender" onclick="removePlaceHolder(event, 'GenderPlaceholder')" required>
+                  <option id="GenderPlaceholder" value="Your Gender" selected disabled>Your Gender</option>
+                  <option id="Male" value="male">Male</option>
+                  <option id="Female" value="female">Female</option>
+                  <option id="Other" value="other">Other</option>
+                </select>
+              </div>
+              <!--Education Level-->
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary">
+                  <i class="bi bi-mortarboard-fill text-white"></i>
+                </span>
+                <select class="form-select text-muted" id="education" name="education" onclick="removePlaceHolder(event, 'EducationPlaceholder')" required>
+                  <option id="EducationPlaceholder" value="placeholder" selected = "true" disabled>Your Highest Academic Attainment</option>
+                  <option id="HighSchool" value="high school">High school diploma</option>
+                  <option id="SomeHighSchool" value="some high school">Some high school</option>
+                  <option id="SomeCollege" value="some college">Some college</option>
+                  <option id="College" value="college">College</option>
+                </select>
+              </div>
+              <!--End new fields-->
+              <!--Assuming we still do not want these to post before they have been hashed-->
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>
+                <input id="password1" type="password" class="form-control" placeholder="Password">
+              </div>
+              <div class="input-group mb-3">
+                <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>
+                <input id="password2" type="password" class="form-control" placeholder="Re-enter Password">
+              </div>
+              <div>
+                <p id="message" class="text-danger" style="height:25px">
+                  PROBLEM MESSAGE HERE
+                </p>
+              </div>
+              <input type="hidden" id="hash" name="hash">
+              <input type="hidden" id="salt" name="salt">
+              <div class="text-center">
+                <button class="btn btn-primary mt-2" type="submit">
+                  Create Account
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Report Selection</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="font/bootstrap-icons.css" />
+    <script src="./javascripts/selectPlaceholder.js"></script>
+    <script>
+        function getSelectValue() {
+            document.getElementById("submitButton").textContent =
+                "View Results for users indicating a \"" + document.getElementById("education").value + "\" Education Level";
+        }
+    </script>
+</head>
+<body>
+<div class="container-fluid vh-100" style="margin-top:10px">
+    <div class="" style="margin-top:100px">
+        <div class="rounded d-flex justify-content-center">
+            <div class="col-lg-6 col-sm-12 shadow-lg p-5 bg-light">
+                <div class="text-center">
+                    <h3 class="text-primary">Report Parameters</h3>
+                </div>
+                <form onSubmit="window.location.href='/adminreportresult.ejs'" method="post">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-primary">
+                          <i class="bi bi-mortarboard-fill text-white"></i>
+                        </span>
+                        <select class="form-select text-muted" id="education" name="education" onclick="removePlaceHolder(event, 'EducationPlaceholder'); getSelectValue()" required>
+                            <option id="EducationPlaceholder" value="Education" selected = "true" disabled>Academic Attainment Level</option>
+                            <option id="HighSchool" value="high school">High school diploma</option>
+                            <option id="SomeHighSchool" value="some high school">Some high school</option>
+                            <option id="SomeCollege" value="some college">Some college</option>
+                            <option id="College" value="college">College</option>
+                        </select>
+                    </div>
+                    <div class="text-center">
+                        <button id="submitButton" class="btn btn-primary mt-2" type="submit">
+                            Make a selection to view results.
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="rounded d-flex justify-content-center">
+    <button type="button" class="btn btn-primary" onclick="window.location.href='/'">Return to Main</button>
+</div>
+</body>
+
+</html>

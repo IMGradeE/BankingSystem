@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Activity - Math Review</title>
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="font/bootstrap-icons.css">
+  <style>
+    .textshadow {
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+      font-size: 60px;
+      font-weight: bold;
+    }
+  </style>
+  <script>
+    function beginColorID() {
+
+    }
+
+    function nextColor() {
+    }
+  </script>
+</head>
+
+<body>
+  <div class="" style="margin-top:100px">               <!-- space padding on top -->
+    <div class="d-flex justify-content-center">         <!-- center -->
+      <div class="col-md-6 shadow-lg p-5 ">             <!-- divs drop down with lines, shadow around box, padding in box-->
+        <div class="text-center">                       <!-- center text -->
+          <h3 class="text-primary">Colors Survey - </h3>
+        </div>
+        <!-- We'll do an overlay, so prepare with position:relative-->
+        <div class="my-5 text-center" style="position:relative">
+          <div id="startButton" style="visibility:visible" >
+            <div class="text-center mt-2">INSTRUCTIONS HERE</div>
+            <button class="btn btn-primary text-center mt-2" type="button" onclick="beginColorID()" >Begin Saying TYPE</button>
+          </div>
+          <!-- Position this one so it's in the middle and overlays the button-->
+          <!-- See https://getbootstrap.com/docs/5.0/utilities/position/ -->
+          <div id="mainText" class="position-absolute top-50 start-50 translate-middle" style="visibility:hidden">
+            <div id="colorText" class="text-center mt-2 textshadow">ORANGE</div>
+            <button id="nextColor" class="btn btn-primary text-center mt-2" type="button" onclick="nextColor()" >Next Color</button>
+          </div>
+        </div>
+          <div class="col-md-12 text-center">
+          <a href="/loginuser"><button class="btn btn-primary text-center mt-2" type="button">Login</button></a>
+          <a href="/register"><button class="btn btn-primary text-center mt-2" type="button">Create Account</button></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <form id="formForTimings" action="/timings" method="post">
+    <input type="hidden" id="timing" name="timing" value="">
+    <input type="hidden" id="timingType" name="timingType" value="">
+  </form>
+
+  <!-- </div> -->
+</body>
+
+</html>
