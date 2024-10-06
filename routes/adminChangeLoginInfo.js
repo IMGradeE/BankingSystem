@@ -3,13 +3,13 @@ var router = express.Router();
 
 /*GET admin report select page.*/
 router.get('/', function (req, res) {
-    console.log("adminreportselect.js: GET");
-    res.render('adminreportselect',{});
+    console.log("adminChangeLoginInfo.js: GET");
+    res.render('adminChangeLoginInfo',{});
 })
 
 
 router.post('/', function (req, res) {
-    console.log("adminreportselect.js: POST");
+    console.log("adminChangeLoginInfo.js: POST");
     let dictionary = {
         "payton": 1.2,
         "john": 1.5,

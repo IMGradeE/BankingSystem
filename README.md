@@ -13,3 +13,5 @@ Initial Requirements as stated by the professor:
 4. Account admins have access to viewing all accounts changing passwords but can’t view finances.
 - Employees have access to all finances but not changing passwords.
 - Customers have access to their own account."
+
+# [First draft of requirements](CS%203750%20Banking%20Application%20Reqs%201.md)
