@@ -56,24 +56,6 @@ OPTIONS:
 										</ul>
 									</div>
 									<div class="col-md-11">
-										<div class="tabbable" id="tabs-864212">
-											<ul class="nav nav-tabs">
-												<!--sections is an array of JSON objects packaging the data of each section together.
-												In customer contexts, each entry is an account.
-												In employee contexts, the only entry currently is the list of customer accounts
-												In admin contexts, the only entry is currently the -->
-												<%for(var i = 0; i < sections.size; ++i){%>
-													<%if(i == 0){%>
-													<li class="nav-item">
-														<a class="nav-link" href="#tab<%=i%>>" data-toggle="tab"><%=sections[i].name%></a>
-													</li>
-													<%}else{%>
-													<li class="nav-item">
-														<a class="nav-link active show" href="#tab<%=i%>" data-toggle="tab"><%=sections[i].name%></a>
-													</li>
-													<%}%>
-												<%}%>
-											</ul>
 											<div class="tab-content">
 
 												<div class="tab-pane active" id="panel-462431">
@@ -214,7 +196,6 @@ OPTIONS:
 														Howdy, I'm in Section 2.
 													</p>
 												</div>
-											</div>
 										</div>
 									</div>
 								</div>

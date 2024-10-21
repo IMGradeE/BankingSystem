@@ -3,6 +3,7 @@ var router = express.Router();
 
 /* GET page. */
 router.get('/', function(req, res, next) {
+
     console.log("register.js: GET");
     res.render('register', { });
 });

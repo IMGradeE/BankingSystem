@@ -15,3 +15,5 @@ Initial Requirements as stated by the professor:
 - Customers have access to their own account."
 
 # [First draft of requirements](CS%203750%20Banking%20Application%20Reqs%201.md)
+
+# [MySQL2 docs](https://sidorares.github.io/node-mysql2/docs)
