@@ -253,10 +253,11 @@ begin
     end if;
 end;
 
-create procedure if not exists reset_password(in userID int, in hashedPass varchar(255), in _salt varchar(255))
+create procedure if not exists reset_password(in userID int, in unhashedPassword varchar(255))
 begin
+    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));
     update users
-    set hashed_password = hashedPass and salt = _salt
+    set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)) and salt = @salt
     where user_id = userID;
 end;
 

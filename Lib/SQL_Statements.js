@@ -299,10 +299,11 @@ const DBProcedureStatements = [
             "        set depositSuccess = "+sqlBool.false+";\n" +
             "    end if;\n" +
             "end;", name: "initiate_deposit"},
-    reset_password= { statement: "create procedure if not exists reset_password(in userID int, in hashedPass varchar(255), in _salt varchar(255))\n" +
+    reset_password= { statement: "create procedure if not exists reset_password(in userID int, in unhashedPassword varchar(255))\n" +
             "begin\n" +
+            "    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
             "    update users\n" +
-            "    set hashed_password = hashedPass and salt = _salt\n" +
+            "    set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)) and salt = @salt\n" +
             "    where user_id = userID;\n" +
             "end;", name: "reset_password"},
     alter_user_role= { statement: "create procedure if not exists alter_user_role(in targetRole int, in userID int, out roleAltered bit(1),\n" +
