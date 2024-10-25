@@ -124,10 +124,7 @@ async function AddDummyDataToDatabase() {
     let names = ["anne", "beetle", "codel", "dier", "john", "fort", "gray"];
 
     for (let i = 0, j = 0; i < 50; i++, j = Math.trunc(i / names.length)) {
-        /* This doesn't work and I can't for the fucking life of me figure out how to get values out of this god forsaken syntax
-        I have never been closer to violently ending my own life than I am right now. Javascript and Python both
-        make me want to cave my skull in with a fucking brick every time I use them.
-        JUST LET ME USE A FUCKING POINTER I AM AN ADULT WITH A FUNCTIONING BRAIN
+        /* This doesn't work and I can't figure out how to get values out of this syntax
         let sql = "select count(*) as cnt, max(external_id) as mx from users;";
         con.query(sql, function (err, results, fields) {
             if (err) {
