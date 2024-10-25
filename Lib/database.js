@@ -1,5 +1,5 @@
 let mysql = require('mysql2');
-const ddl_ = require('SQL_Statements');
+const ddl_ = require('./SQL_Statements');
 const conInfo = require('./connectionInfo');
 
 const con =
@@ -26,7 +26,7 @@ const conreg =
 con.connect(function (err, ) {
     if(err) throw err;
     console.log('Connected successfully.');
-    con.query("CREATE DATABASE IF NOT EXISTS " + conInfo.DB_NAME, function (err, result){
+    con.execute("CREATE DATABASE IF NOT EXISTS " + conInfo.DB_NAME, function (err, result){
         if(err) throw err;
         console.log('Database created.');
         selectDatabase();
@@ -42,6 +42,7 @@ function selectDatabase(){
         execSQL(ddl_.views,'view');
         execSQL(ddl_.procedures, 'procedures');
         addTableData();
+        AddDummyDataToDatabase();
     })
 }
 
@@ -49,7 +50,7 @@ function execSQL(arr, _type) {
 
     for (const key of arr)
     {
-        con.execute(key.statement, function (err, results, fields) {
+        con.query(key.statement, function (err, results, fields) {
             if (err) {
                 console.log(err.message);
                 throw err;
@@ -60,41 +61,37 @@ function execSQL(arr, _type) {
     }
 }
 
-function registerUser(first_name, last_name, password){
+function registerUser(externalID, first_name, last_name, password, role){
     let successFlag = 0;
-    let externalID;
-    let sql = "select count(*) as cnt from view_users;";
-    con.query(sql, function(err, results, fields) {
-        if (err) {
-            console.log(err.message);
-            throw err;
-        }
-        externalID = 100000 + results['cnt']++;
-    });
+    let sql;
 
-    sql = "CALL register_user('"+externalID+"', '"+first_name+"', '"+last_name+"', '"+password+"', @ret);";
-    con.query(sql, function(err, results, fields) {
+    if (typeof role === "undefined") {
+        sql = "CALL register_user("+externalID+", '"+password+"', '"+first_name+"', '"+last_name+"', 1 , @ret);";
+    }else{
+        sql = "CALL register_user("+externalID+", '"+password+"', '"+first_name+"', '"+last_name+"', "+role+", @ret);";
+    }
+
+    con.execute(sql, function(err, results, fields) {
         if (err) {
             console.log(err.message);
             throw err;
         }
     });
-
-    con.query("select @ret as ret;", function(err, result, fields) {
+    con.execute("select @ret as ret;", function(err, result, fields) {
         if (err) {
             console.log(err.message);
             throw err;
         }
         else{
-            successFlag = result['ret'];
+            successFlag = result[0]['ret'];
+            console.log(result[0]['ret'])
+        }
+        if(successFlag === 0){
+            console.log("Failed to add user: "+ first_name + " "+ last_name +" because the user already exists.");
+        }else{
+            console.log("Successfully added user: "+  first_name + " "+ last_name +". External ID: " + externalID);
         }
     });
-    if(successFlag === true){
-        console.log("Failed to add user: "+ first_name + " "+ last_name +" because the user already exists.");
-    }else{
-        console.log("Successfully added user: "+  first_name + " "+ last_name +". External ID: " + externalID);
-    }
-    return successFlag;
 }
 
 function addTableData() {
@@ -104,13 +101,13 @@ function addTableData() {
     let fnArgs = [
         account = {tableName: 'account_types', funcName: 'insert_account_type', args: accountArgs},
         users = {tableName: 'user_roles', funcName: 'insert_user_role', args: userRoleArgs},
-        transactions = {tableName: 'transaction_types', funcName: 'insert_transaction_types', args: userRoleArgs}
+        transactions = {tableName: 'transaction_types', funcName: 'insert_transaction_type', args: userRoleArgs}
     ]
     for (const fnArgsKey of fnArgs) {
         {
             for (const arg of fnArgsKey.args) {
                 let sql = "CALL " + fnArgsKey.funcName + "('" + arg + "');";
-                con.query(sql, function (err, rows) {
+                con.execute(sql, function (err, rows) {
                     if (err) {
                         console.log(err.message);
                         throw err;
@@ -120,7 +117,30 @@ function addTableData() {
             }
         }
     }
-    registerUser("admin", "a", "passtest");
+}
+
+
+async function AddDummyDataToDatabase() {
+    let names = ["anne", "beetle", "codel", "dier", "john", "fort", "gray"];
+
+    for (let i = 0, j = 0; i < 50; i++, j = Math.trunc(i / names.length)) {
+        /* This doesn't work and I can't for the fucking life of me figure out how to get values out of this god forsaken syntax
+        I have never been closer to violently ending my own life than I am right now. Javascript and Python both
+        make me want to cave my skull in with a fucking brick every time I use them.
+        JUST LET ME USE A FUCKING POINTER I AM AN ADULT WITH A FUNCTIONING BRAIN
+        let sql = "select count(*) as cnt, max(external_id) as mx from users;";
+        con.query(sql, function (err, results, fields) {
+            if (err) {
+                console.log(err.message);
+                throw err;
+            }
+            console.log("F");
+            console.log(results[0]['mx']);
+            console.log("G");
+            value = {id: (results[0]['cnt'] === 0) ? 100000 : (results[0]['mx'] + 1)};
+        });*/
+        registerUser(i, names[i % 7], names[j], names[i] + names[j]);
+    }
 }
 
 exports.con = con;

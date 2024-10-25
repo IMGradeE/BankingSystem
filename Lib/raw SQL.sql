@@ -175,9 +175,11 @@ group by 'from';
 
 create or replace view view_balance as
 select u.user_id as                       uid,
+        accounts.account_id as                   aid,
        type,
        CONCAT('$', SIGN(account_cents) * ABS(account_cents) DIV 100, '.',
-              ABS(account_cents) MOD 100) `Present Balance`
+              ABS(account_cents) MOD 100) `Present Balance`,
+       account_cents as cents
 from accounts
          inner join account_types a on accounts.account_type_id = a.account_type_id
          inner join users u on accounts.user_id = u.user_id;
@@ -203,7 +205,7 @@ create procedure if not exists initiate_transfer(in origin int, in type int, in 
 begin
 
     set transferSuccess = b'1'; /*assume we will be successful*/
-    if transferSuccess = (select addressable from accounts as a where a.account_id = target) then
+    if transferSuccess = (select addressable from accounts as a where a.account_id = target) and origin != target then
         start transaction;
         insert into account_transactions(transaction_memo, transaction_source_account_id, transaction_target_account_id,
                                          transaction_initiated_by_user_id, initial_cents_origin, initial_cents_target,
@@ -253,45 +255,45 @@ begin
     end if;
 end;
 
-create procedure if not exists reset_password(in userID int, in unhashedPassword varchar(255))
+create procedure if not exists reset_password(in external_id int, in unhashedPassword varchar(255))
 begin
     set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));
     update users
     set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)) and salt = @salt
-    where user_id = userID;
+    where external_id = externalID;
 end;
 
 
-create procedure if not exists alter_user_role(in targetRole int, in userID int, out roleAltered bit(1),
+create procedure if not exists alter_user_role(in targetRole int, in externalID int, out roleAltered bit(1),
                                                out errormsg varchar(18))
 begin
     set roleAltered = b'1';
     if targetRole in (select user_role_id from user_roles where role = 'admin'/*TODO inject*/) then
-        if userID in (select user_id from accounts where user_id = userID and account_cents > 0) then
+        if externalID in (select user_id from accounts where external_id = externalID and account_cents > 0) then
             set roleAltered = b'0';
             set errormsg = 'Has accounts open.';
         else
             update users
             set user_role_id = (select user_role_id from user_roles where role = 'admin'/*TODO inject*/)
-            where user_id = userID;
+            where externalID = external_id;
             update accounts
             set addressable = b'0'
-            where user_id = userID;
+            where externalID = external_id;
         end if;
     elseif targetRole in (select user_role_id from user_roles where role = 'customer'/*TODO inject*/) then
         update users
         set user_role_id = (select user_role_id from user_roles where role = 'customer'/*TODO inject*/)
-        where user_id = userID;
+        where externalID = external_id;
         update accounts
         set addressable = b'1'
-        where user_id = userID;
+        where externalID = external_id;
     elseif targetRole in (select user_role_id from user_roles where role = 'employee'/*TODO inject*/) then
         update users
         set user_role_id = (select user_role_id from user_roles where role = 'employee'/*TODO inject*/)
-        where user_id = userID;
+        where externalID = external_id;
         update accounts
         set addressable = b'1'
-        where user_id = userID;
+        where externalID = external_id;
     else
         set roleAltered = b'0';
         set errormsg = 'Invalid role.';
@@ -374,6 +376,11 @@ begin
     select * from user_info where external_id = externalID;
 end;
 
+create procedure if not exists get_user_info_from_name(in firstName varchar(32), in lastName varchar(32))
+begin
+    select * from user_info where first_name = firstName AND last_name = lastName;
+end;
+
 /*
 TODO IN JAVASCRIPT
 export history date range
@@ -403,10 +410,11 @@ begin
     select * from view_withdrawals where accountID = `from`;
 end;
 
-create procedure if not exists get_balance(in userID int, in accountType varchar(16))
+create procedure if not exists get_balance(in accountNumber int)
 begin
-    select `Present Balance` from view_balance where userID = uid and type = accountType;
+    select `Present Balance`, cents from view_balance where aid = accountNumber;
 end;
+
 
 create procedure if not exists get_incoming_transfers_date_range(in accountID int, in lower DATETIME, in upper DATETIME)
 begin

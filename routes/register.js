@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-let con = require('lib/database').conreg;
+let con = require('../lib/database').conreg;
 
 
 /* GET page. */

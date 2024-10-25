@@ -31,7 +31,7 @@ const accountTypes = Object.freeze({
     'checking':2
 })
 
-const DBTableStatements = [
+const  DBTableStatements = [
     account_types= {
         statement: "CREATE TABLE IF NOT EXISTS account_types\n" +
             "(\n" +
@@ -42,7 +42,7 @@ const DBTableStatements = [
             ");",
         name: "account_types"
     },
-    transaction_type= {
+    user_roles = {
         statement: "CREATE TABLE IF NOT EXISTS user_roles\n" +
             "(\n" +
             "    user_role_id INT         NOT NULL AUTO_INCREMENT,\n" +
@@ -50,7 +50,7 @@ const DBTableStatements = [
             "    PRIMARY KEY (user_role_id),\n" +
             "    UNIQUE (role)\n" +
             ");",
-        name: "transaction_type"
+        name: "user_roles"
     },
     transaction_type= {
         statement: "CREATE TABLE IF NOT EXISTS transaction_type\n" +
@@ -223,9 +223,11 @@ const DBViewStatements = [
     view_balance = {
         statement: "create or replace view view_balance as\n" +
             "select u.user_id as                       uid,\n" +
+            "        accounts.account_id as                   aid,\n" +
             "       type,\n" +
             "       CONCAT('$', SIGN(account_cents) * ABS(account_cents) DIV 100, '.',\n" +
-            "              ABS(account_cents) MOD 100) `Present Balance`\n" +
+            "              ABS(account_cents) MOD 100) `Present Balance`,\n" +
+            "       account_cents as cents\n" +
             "from accounts\n" +
             "         inner join account_types a on accounts.account_type_id = a.account_type_id\n" +
             "         inner join users u on accounts.user_id = u.user_id;",
@@ -233,7 +235,14 @@ const DBViewStatements = [
     },
     user_info = {
         statement: "create or replace view user_info as\n" +
-            "select *\n" +
+            "select account_id,\n" +
+            "       account_cents,\n" +
+            "       a.account_type_id,\n" +
+            "       addressable,\n" +
+            "       users.user_role_id,\n" +
+            "       users.external_id,\n" +
+            "       role,\n" +
+            "       type\n" +
             "from users\n" +
             "         inner join accounts a on users.user_id = a.user_id\n" +
             "         inner join user_roles ur on users.user_role_id = ur.user_role_id\n" +
@@ -243,6 +252,10 @@ const DBViewStatements = [
 ];
 
 const DBProcedureStatements = [
+    get_balance = {statement: "create procedure if not exists get_balance(in accountNumber int)\n" +
+            "begin\n" +
+            "    select `Present Balance`, cents from view_balance where aid = accountNumber;\n" +
+            "end;", name: "get_balance"},
     initiate_transfer= { statement: "create procedure if not exists initiate_transfer(in origin int, in type int, in target int, in initiatedBy int,\n" +
             "                                                 in memo text,\n" +
             "                                                 in amount int,\n" +
@@ -252,7 +265,7 @@ const DBProcedureStatements = [
             "begin\n" +
             "\n" +
             "    set transferSuccess = "+sqlBool.true+"; /*assume we will be successful*/\n" +
-            "    if transferSuccess = (select addressable from accounts as a where a.account_id = target) then\n" +
+            "    if transferSuccess = (select addressable from accounts as a where a.account_id = target) and origin != target then\n" +
             "        start transaction;\n" +
             "        insert into account_transactions(transaction_memo, transaction_source_account_id, transaction_target_account_id,\n" +
             "                                         transaction_initiated_by_user_id, initial_cents_origin, initial_cents_target,\n" +
@@ -299,43 +312,43 @@ const DBProcedureStatements = [
             "        set depositSuccess = "+sqlBool.false+";\n" +
             "    end if;\n" +
             "end;", name: "initiate_deposit"},
-    reset_password= { statement: "create procedure if not exists reset_password(in userID int, in unhashedPassword varchar(255))\n" +
+    reset_password= { statement: "create procedure if not exists reset_password(in external_id int, in unhashedPassword varchar(255))\n" +
             "begin\n" +
             "    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
             "    update users\n" +
             "    set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)) and salt = @salt\n" +
-            "    where user_id = userID;\n" +
+            "    where external_id = externalID;\n" +
             "end;", name: "reset_password"},
-    alter_user_role= { statement: "create procedure if not exists alter_user_role(in targetRole int, in userID int, out roleAltered bit(1),\n" +
+    alter_user_role= { statement: "create procedure if not exists alter_user_role(in targetRole int, in externalID int, out roleAltered bit(1),\n" +
             "                                               out errormsg varchar(18))\n" +
             "begin\n" +
             "    set roleAltered = "+sqlBool.true+";\n" +
             "    if targetRole in (select user_role_id from user_roles where role = '"+ userRoles[userRoles.admin] +"') then\n" +
-            "        if userID in (select user_id from accounts where user_id = userID and account_cents > 0) then\n" +
+            "        if userID in (select user_id from accounts where external_id = externalID and account_cents > 0) then\n" +
             "            set roleAltered = "+sqlBool.false+";\n" +
             "            set errormsg = 'Has accounts open.';\n" +
             "        else\n" +
             "            update users\n" +
             "            set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.admin]+"')\n" +
-            "            where user_id = userID;\n" +
+            "            where external_id = externalID;\n" +
             "            update accounts\n" +
             "            set addressable = "+sqlBool.false+"\n" +
-            "            where user_id = userID;\n" +
+            "            where external_id = externalID;\n" +
             "        end if;\n" +
             "    elseif targetRole in (select user_role_id from user_roles where role = '"+userRoles[userRoles.customer]+"') then\n" +
             "        update users\n" +
             "        set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.customer]+"')\n" +
-            "        where user_id = userID;\n" +
+            "        where external_id = externalID;\n" +
             "        update accounts\n" +
-            "        set addressable = "+sqlBool.true+"n" +
-            "        where user_id = userID;\n" +
+            "        set addressable = "+sqlBool.true+"\n" +
+            "        where external_id = externalID;\n" +
             "    elseif targetRole in (select user_role_id from user_roles where role = '"+userRoles[userRoles.employee]+"') then\n" +
             "        update users\n" +
             "        set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.employee]+"')\n" +
-            "        where user_id = userID;\n" +
+            "        where external_id = externalID;\n" +
             "        update accounts\n" +
-            "        set addressable = "+sqlBool.true+"n" +
-            "        where user_id = userID;\n" +
+            "        set addressable = "+sqlBool.true+"\n" +
+            "        where external_id = externalID;\n" +
             "    else\n" +
             "        set roleAltered = "+sqlBool.false+";\n" +
             "        set errormsg = 'Invalid role.';\n" +
@@ -422,10 +435,6 @@ const DBProcedureStatements = [
             "begin\n" +
             "    select * from view_withdrawals where accountID = `from`;\n" +
             "end;", name: "get_withdrawals"},
-    get_balance= { statement: "create procedure if not exists get_balance(in userID int, in accountType varchar(16))\n" +
-            "begin\n" +
-            "    select `Present Balance` from view_balance where userID = uid and type = accountType;\n" +
-            "end;", name: "get_balance"},
     get_incoming_transfers_date_range= { statement: "create procedure if not exists get_incoming_transfers_date_range(in accountID int, in lower DATETIME, in upper DATETIME)\n" +
             "begin\n" +
             "    select * from view_incoming_transfers where accountID = `to` and `Date and Time` BETWEEN lower and upper;\n" +
@@ -442,6 +451,36 @@ const DBProcedureStatements = [
             "begin\n" +
             "    select * from view_withdrawals where accountID = `from` and `Date and Time` BETWEEN lower and upper;\n" +
             "end;", name: "get_withdrawals_date_range"},
+    get_user_info_from_name = {statement:
+        "create procedure if not exists get_user_info_from_name(in firstName varchar(32), in lastName varchar(32))\n" +
+                "begin\n" +
+            "    select * from user_info where first_name = firstName AND last_name = lastName;\n" +
+            "end;", name: "get_user_info_from_name",
+    },
+    insert_account = {
+        statement: "create procedure if not exists insert_account(in externalID int)\n" +
+                "begin\n" +
+            "    set @accounts_open = (select count(*)\n" +
+            "                          from accounts\n" +
+            "                                   inner join users u on accounts.user_id = u.user_id\n" +
+            "                          where u.external_id = externalID);\n" +
+            "    if @accounts_open = 0 then\n" +
+            "        insert into accounts(account_type_id, user_id)\n" +
+            "        values ("+accountTypes.savings+", (select accounts.user_id\n" +
+            "                                       from accounts\n" +
+            "                                                inner join users u on accounts.user_id = u.user_id\n" +
+            "                                       where u.external_id = externalID\n" +
+            "                                       limit 1));\n" +
+            "    elseif @accounts_open = 1 then\n" +
+            "        insert into accounts(account_type_id, user_id)\n" +
+            "        values ('"+accountTypes.checking+"', (select accounts.user_id\n" +
+            "                                       from accounts\n" +
+            "                                                inner join users u on accounts.user_id = u.user_id\n" +
+            "                                       where u.external_id = externalID\n" +
+            "                                       limit 1));\n" +
+            "    end if;\n" +
+            "end;", name: "insert_account"
+    }
 ];
 
 exports.tables = DBTableStatements;

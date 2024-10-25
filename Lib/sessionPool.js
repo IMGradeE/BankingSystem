@@ -1,8 +1,9 @@
 var mysql2 = require('mysql2/promise');
 
+
 // Bug tweak
 // Get a plain MySQL connection and create a session table (the express-mysql-session module is bugged and doesn't do it)
-var dbCon = require('../lib/database');
+var dbCon = require('../lib/database').con;
 
 let sql = "CREATE DATABASE IF NOT EXISTS NodeExpressSessionStorage";
 console.log("sessionPool.js: sql message will be " + sql);
