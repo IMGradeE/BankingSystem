@@ -31,8 +31,8 @@ const accountTypes = Object.freeze({
     'checking':2
 })
 
-const  DBTableStatements = [
-    account_types= {
+const DBTableStatements = [
+    account_types = {
         statement: "CREATE TABLE IF NOT EXISTS account_types\n" +
             "(\n" +
             "    account_type_id INT         NOT NULL AUTO_INCREMENT,\n" +

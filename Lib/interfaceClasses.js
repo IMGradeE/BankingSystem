@@ -1,7 +1,7 @@
 const conInfo = require("./connectionInfo");
 const con = require("database").conreg;
 const register_user = require("database").registerUser;
-var transactionTypes = require('SQL_Statements').transactionTypes;
+var transactionTypes = require('Lib/SQL_DDL').transactionTypes;
 // write procedure calls
 
 //static

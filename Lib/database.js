@@ -1,5 +1,5 @@
 let mysql = require('mysql2');
-const ddl_ = require('./SQL_Statements');
+const ddl_ = require('./SQL_DDL');
 const conInfo = require('./connectionInfo');
 
 const con =
@@ -12,6 +12,7 @@ const con =
             multipleStatements: true              // Needed for stored procedures with OUT results
         }
     )
+
 const conreg =
     mysql.createConnection(
         {
@@ -119,11 +120,10 @@ function addTableData() {
     }
 }
 
-
-async function AddDummyDataToDatabase() {
+function AddDummyDataToDatabase() {
     let names = ["anne", "beetle", "codel", "dier", "john", "fort", "gray"];
 
-    for (let i = 0, j = 0; i < 50; i++, j = Math.trunc(i / names.length)) {
+    for (let i = 0, j = 0; i < 49; i++, j = Math.trunc(i / names.length)) {
         /* This doesn't work and I can't figure out how to get values out of this syntax
         let sql = "select count(*) as cnt, max(external_id) as mx from users;";
         con.query(sql, function (err, results, fields) {
