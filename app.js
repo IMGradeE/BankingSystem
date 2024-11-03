@@ -7,9 +7,7 @@
      adminreportresultRouter = require('./routes/employeeViewUsers'),
      indexRouter = require('./routes/index'),
      loginUserRouter = require('./routes/loginuser'),
-     registerRouter = require('./routes/register'),
-     surveyRouter = require('./routes/survey'),
-     timingsRouter = require('./routes/timings');
+     registerRouter = require('./routes/register');
 
  var session = require('express-session');
  var MySQLStore = require('express-mysql-session')(session);
@@ -58,8 +56,6 @@ app.use(express.static(path.join(__dirname, "node_modules/bootstrap-icons/")));
 app.use('/', indexRouter);
 app.use('/loginuser', loginUserRouter);
 app.use('/register', registerRouter);
-app.use('/survey', surveyRouter);
-app.use('/timings', timingsRouter);
 app.use('/adminreportresult', adminreportresultRouter);
 app.use('/adminreportselect', adminreportselectRouter);
 
