@@ -31,7 +31,7 @@
                 <span class="input-group-text bg-primary">
                   <i class="bi bi-person-vcard-fill text-white"></i>
                 </span>
-                <input id="username" name="username" type="text" class="form-control" placeholder="Username">
+                <input id="username" name="username" type="text" class="form-control" placeholder="First Name">
               </div>
               <!--New fields begin here-->
               <!--Name--> <!--TODO does client want a username, email, and legal name? (what does "Name" refer to in SR?)-->
@@ -39,45 +39,9 @@
                 <span class="input-group-text bg-primary">
                   <i class="bi bi-person-plus-fill text-white"></i>
                 </span>
-                <input id="name" name="name" type="text" class="form-control" placeholder="Your Name">
+                <input id="name" name="name" type="text" class="form-control" placeholder="Last Name">
               </div>
-              <!--Email-->
-              <div class="input-group mb-3">
-                <span class="input-group-text bg-primary">
-                  <i class="bi bi-envelope-at-fill text-white"></i>
-                </span>
-                <input id="email" name="email" type="email" class="form-control" placeholder="Your Email">
-              </div>
-              <!--Gender-->
-              <!--
-              NOTE: specified as (by my assumption) radio buttons, but I went for a drop-down
-              because I thought it was cleaner.
-              -->
-              <div class="input-group mb-3">
-                <span class="input-group-text bg-primary">
-                  <i class="bi bi-gender-trans text-white"></i>
-                </span>
-                <select class="form-select text-muted" id="gender" name="gender" onclick="removePlaceHolder(event, 'GenderPlaceholder')" required>
-                  <option id="GenderPlaceholder" value="Your Gender" selected disabled>Your Gender</option>
-                  <option id="Male" value="male">Male</option>
-                  <option id="Female" value="female">Female</option>
-                  <option id="Other" value="other">Other</option>
-                </select>
-              </div>
-              <!--Education Level-->
-              <div class="input-group mb-3">
-                <span class="input-group-text bg-primary">
-                  <i class="bi bi-mortarboard-fill text-white"></i>
-                </span>
-                <select class="form-select text-muted" id="education" name="education" onclick="removePlaceHolder(event, 'EducationPlaceholder')" required>
-                  <option id="EducationPlaceholder" value="placeholder" selected = "true" disabled>Your Highest Academic Attainment</option>
-                  <option id="HighSchool" value="high school">High school diploma</option>
-                  <option id="SomeHighSchool" value="some high school">Some high school</option>
-                  <option id="SomeCollege" value="some college">Some college</option>
-                  <option id="College" value="college">College</option>
-                </select>
-              </div>
-              <!--End new fields-->
+
               <!--Assuming we still do not want these to post before they have been hashed-->
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>

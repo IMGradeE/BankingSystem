@@ -12,7 +12,6 @@
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-	  <%%>
 
   </head>
   <body>
@@ -24,6 +23,7 @@ OPTIONS:
 	accessType = [userType, navItems[]{title, ref}, TODO ]
 	queryResults[]
 -->
+
   <div class="container-fluid vh-100" style="margin-top:10px">
 	  <div class="" style="margin-top:5px">
 		  <div class="rounded d-flex justify-content-center">
@@ -34,177 +34,295 @@ OPTIONS:
 						<div class="row">
 							<div class="col-md-12">
 								<div class="row">
-									<div class="col-md-1">
+									<div class="col-md-2">
 										<ul class="nav flex-column nav-pills">
 											<li class="nav-item">
-												<a class="nav-link active" href="#">Home</a>
+												<a class="nav-link active" href="#">Overview</a>
 											</li>
 											<li class="nav-item">
-												<a class="nav-link" href="#">Profile</a>
+												<a class="nav-link"><form method="post">
+														<input type="text" value= "Initiate a Transfer" name="title" hidden="hidden"><input type="text" value="transfer" hidden="hidden" name="page"><button type = "submit" class="btn btn-light">Transfers</button></form></a>
 											</li>
 											<li class="nav-item">
-												<a class="nav-link disabled" href="#">Messages</a>
+												<a class="nav-link enabled" href="#">Savings </a>
 											</li>
-											<li class="nav-item dropdown ml-md-auto">
-												 <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown">Dropdown link</a>
-												<div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
-													 <a class="dropdown-item" href="#">Action</a> <a class="dropdown-item" href="#">Another action</a> <a class="dropdown-item" href="#">Something else here</a>
-													<div class="dropdown-divider">
-													</div> <a class="dropdown-item" href="#">Separated link</a>
-												</div>
+											<li class="nav-item">
+												<a class="nav-link" href="#">Checking (add)</a>
 											</li>
+
+											<%if(accessType.userType === "employee"){%>
+												<li class="nav-item dropdown ml-md-auto">
+													<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown">Enter Customer Account</a>
+													<div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+														<a>
+															<form method="post">
+																<input type="text" class="form-control" name="customerID" id="customerID" placeholder="Enter customer's ID"><button type="submit" class="btn btn-primary mt-2">Go</button>
+															</form>
+														</a>
+														<a class="dropdown-item" href="#">Overview</a>
+														<a class="dropdown-item" href="#">Transfers</a>
+														<a class="dropdown-item" href="#">Checking</a>
+														<a class="dropdown-item" href="#">Savings</a>
+														<div class="dropdown-divider">
+														</div> <a class="dropdown-item" href="#">Separated link</a>
+													</div>
+												</li>
+											<%}%>
 										</ul>
 									</div>
-									<div class="col-md-11">
-											<div class="tab-content">
+									<div class="col-md-10 rounded shadow-sm">
+										<%if(page == "overview" || page === "deposit" || page === "withdrawal" ){%>
+										<%if(page === "deposit"){%>
+											<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
 
-												<div class="tab-pane active" id="panel-462431">
-													<p>
-														<!--TODO If pane has table
-														(control flow for what content to render goes here)-->
-													<!--TODO Static in pane item displaying current and available balances, as well as pending charges.-->
-													<!--NOTE employee and admin initial screen can use the same UI but an admin will have a list of accounts requesting a password reset and the ability to approve them.-->
-													<!--This feature for admins actually does not make sense because password resets can be done automatically with temporary passwords issued via a secure portal or other means. TODO ASK ABOUT THIS -->
-													<!--This static item should also be on the transfers page, but instead of showing balance information, have the UI for initiating a transfer-->
-													<!--NOTE Pending transactions should appear in the list first-->
-													<!--TODO all tables need to have search bars-->
-													<h3>
-														<%=sections[0].tableTitle%>
-													</h3>
-													<table class="table table-sm table-bordered table-hover">
-														<thead>
-														<tr>
-															<!--TODO dynamically generate the correct number of th elements, populate accordingly-->
-															<th>
-																#
-															</th>
-															<th>
-																Product
-															</th>
-															<th>
-																Payment Taken
-															</th>
-															<th>
-																Status
-															</th>
-														</tr>
-														</thead>
-														<tbody>
-														<!--TODO dynamically insert content from database into rows-->
-														<tr>
-															<td>
-																1
-															</td>
-															<td>
-																TB - Monthly
-															</td>
-															<td>
-																01/04/2012
-															</td>
-															<td>
-																Default
-															</td>
-														</tr>
-														<tr class="table-active">
-															<td>
-																1
-															</td>
-															<td>
-																TB - Monthly
-															</td>
-															<td>
-																01/04/2012
-															</td>
-															<td>
-																Approved
-															</td>
-														</tr>
-														<tr class="table-success">
-															<td>
-																2
-															</td>
-															<td>
-																TB - Monthly
-															</td>
-															<td>
-																02/04/2012
-															</td>
-															<td>
-																Declined
-															</td>
-														</tr>
-														<tr class="table-warning">
-															<td>
-																3
-															</td>
-															<td>
-																TB - Monthly
-															</td>
-															<td>
-																03/04/2012
-															</td>
-															<td>
-																Pending
-															</td>
-														</tr>
-														<tr class="table-danger">
-															<td>
-																4
-															</td>
-															<td>
-																TB - Monthly
-															</td>
-															<td>
-																04/04/2012
-															</td>
-															<td>
-																Call in to confirm
-															</td>
-														</tr>
-														</tbody>
-													</table>
-													<nav class="pagination-sm">
-														<ul class="pagination">
-															<!--TODO the number of pages available needs to be totalEntries/n + 1 if totalEntries%n != 0, with a max of 9 clickable indices and ellipsis before the last clickable location which is the maximum.-->
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get the text of this element as num * n entries and redraw table-->">Previous</a>
-															</li>
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get the text of this element as num * n entries and redraw table-->">1</a>
-															</li>
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">2</a>
-															</li>
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">3</a>
-															</li>
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">4</a>
-															</li>
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">5</a>
-															</li>
-															<li class="page-item">
-																<a class="page-link" href="<!--TODO get n entries past the current last entry and redraw table-->">Next</a>
-															</li>
-														</ul>
-													</nav>
-													</p>
-												</div>
-												<div class="tab-pane" id="tab2">
-													<p>
-														Howdy, I'm in Section 2.
-													</p>
-												</div>
+											<form method="post">
+											<div class="mb-3">
+												<label for="receivingAccount" class="form-label text-secondary-emphasis">Into Account</label>
+												<select class="form-select" name="receivingAccount" id="receivingAccount">
+													<option selected>Choose an Account</option>
+													<option value="1">Savings</option>
+													<option value="2">Checking</option>
+												</select>
+											</div>
+											<div class="mb-3">
+												<label for="Amount" class="form-label text-secondary-emphasis">Amount</label>
+												<input class="form-control" type="text" id="Amount" name="amount">
+											</div>
+											<button class="btn btn-primary mt-2" type="submit">Submit</button>
+												<hr>
+
+										</form>
 										</div>
+										<%}else if(page === "withdrawal"){%>
+										<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
+											<form method="post">
+											<div class="mb-3">
+												<label for="sendingAccount" class="form-label text-secondary-emphasis">From Account</label>
+												<select class="form-select" name="sendingAccount" id="sendingAccount">
+													<option selected>Choose an Account</option>
+													<option value="1">Savings</option>
+													<option value="2">Checking</option>
+												</select>
+											</div>
+												<div class="mb-3">
+													<label for="Amount" class="form-label text-secondary-emphasis">Amount</label>
+													<input class="form-control" type="text" id="Amount" name="amount">
+												</div>
+												<button class="btn btn-primary mt-2" type="submit">Submit</button>
+												<hr>
+
+										</form>
+										</div>
+
+											<%}%>
+
+											<!--TODO If pane has table
+											(control flow for what content to render goes here)-->
+										<!--TODO Static in pane item displaying current and available balances, as well as pending charges.-->
+										<!--NOTE employee and admin initial screen can use the same UI but an admin will have a list of accounts requesting a password reset and the ability to approve them.-->
+										<!--This feature for admins actually does not make sense because password resets can be done automatically with temporary passwords issued via a secure portal or other means. TODO ASK ABOUT THIS -->
+										<!--This static item should also be on the transfers page, but instead of showing balance information, have the UI for initiating a transfer-->
+										<!--NOTE Pending transactions should appear in the list first-->
+										<!--TODO all tables need to have search bars-->
+
+										<div class="row shadow-sm bg-body">
+
+											<div class = "col-8">
+												<h3>
+													<%=options.sections[0].tableTitle%>
+												</h3>
+											</div>
+											<div class = "col-2 text-sm-end">
+
+												<form method="post" >
+													<input type="text" value= "deposit" name="page" hidden="hidden">
+													<input type="text" value= "Make a Deposit" name="title" hidden="hidden">
+													<button type="submit" class= "btn btn-outline-secondary mt-1 border-bottom-0 rounded-bottom-0">Make a Deposit</button>
+												</form>
+											</div>
+												<div class = "col-2 text-sm-end">
+
+												<form method="post">
+													<input type="text" value= "withdrawal" name="page" hidden="hidden">
+													<input type="text" value= "Make a Withdrawal" name="title" hidden="hidden">
+													<button type="submit" class="btn btn-outline-secondary mt-1 border-bottom-0 rounded-bottom-0">Make a Withdrawal</button>
+												</form>
+											</div>
+											<hr>
+
+										<table class="table table-sm table-borderless table-hover">
+											<thead>
+											<tr>
+												<!--TODO dynamically generate the correct number of th elements, populate accordingly-->
+												<th>
+													ID
+												</th>
+												<th>
+													Type
+												</th>
+												<th>
+													Date and Time
+												</th>
+												<th>
+													Amount
+												</th>
+												<th>
+													Final Balance
+												</th>
+											</tr>
+											</thead>
+											<tbody>
+											<!--TODO dynamically insert content from database into rows-->
+											<tr>
+												<td>
+													10
+												</td>
+												<td>
+													Transfer
+												</td>
+												<td>
+													01/08/2012 00:00:00
+												</td>
+												<td>
+													$15.00
+												</td>
+												<td>
+													$85.00
+												</td>
+											</tr>
+											<tr >
+												<td>
+													9
+												</td>
+												<td>
+													Withdrawal
+												</td>
+												<td>
+													01/06/2012 00:00:00
+												</td>
+												<td>
+													$100.00
+												</td>
+												<td>
+													$100.00
+												</td>
+											</tr>
+											<tr >
+												<td>
+													8
+												</td>
+												<td>
+													Transfer
+												</td>
+												<td>
+													01/04/2012 12:00:00
+												</td>
+												<td>
+													$110.00
+												</td>
+												<td>
+													$200.00
+												</td>
+											</tr>
+											<tr >
+												<td>
+													7
+												</td>
+												<td>
+													Withdrawal
+												</td>
+												<td>
+													01/04/2012 00:00:00
+												</td>
+												<td>
+													$10.00
+												</td>
+												<td>
+													$90.00
+												</td>
+											</tr>
+											<tr >
+												<td>
+													6
+												</td>
+												<td>
+													Deposit
+												</td>
+												<td>
+													01/02/2012 00:00:00
+												</td>
+												<td>
+													$100.00
+												</td>
+												<td>
+													$100.00
+												</td>
+											</tr>
+											</tbody>
+										</table>
+										<nav class="pagination-sm">
+											<ul class="pagination">
+												<!--TODO the number of pages available needs to be totalEntries/n + 1 if totalEntries%n != 0, with a max of 9 clickable indices and ellipsis before the last clickable location which is the maximum.-->
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get the text of this element as num * n entries and redraw table-->">Previous</a>
+												</li>
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get the text of this element as num * n entries and redraw table-->">1</a>
+												</li>
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">2</a>
+												</li>
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">3</a>
+												</li>
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">4</a>
+												</li>
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get the text of this element as num, [num-1 * n, ((num-1)*n)+n] entries and redraw table-->">5</a>
+												</li>
+												<li class="page-item">
+													<a class="page-link" href="<!--TODO get n entries past the current last entry and redraw table-->">Next</a>
+												</li>
+											</ul>
+										</nav>
+
+										<%}else if(page === "transfer"){%>
+												<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
+
+												<form>
+										<div class="mb-3">
+											<label for="sendingAccount" class="form-label text-secondary-emphasis">Sending Account</label>
+											<select class="form-select" name="sendingAccount" id="sendingAccount">
+												<option selected>Choose an Account</option>
+												<option value="1">Savings</option>
+												<option value="2">Checking</option>
+											</select>
+										</div>
+										<div class="mb-3">
+											<label for="receivingAccount" class="form-label text-secondary-emphasis">Receiving Account</label>
+											<input class="form-control" type="text" id="receivingAccount" name="receivingAccount">
+										</div>
+										<div class="mb-3">
+											<label for="transferMemo" class="form-label text-secondary-emphasis">Memo</label>
+											<textarea class="form-control" type="text" id="transferMemo" name="transferMemo"></textarea>
+										</div>
+										<div class="mb-3">
+											<label for="Amount" class="form-label">Amount</label>
+											<input class="form-control" type="text" id="Amount" name="amount">
+										</div>
+										<button class="btn btn-primary mt-2" type="submit">Submit</button>
+										</form>
+										</div>
+										<%}%>
 									</div>
 								</div>
 							</div>
 						</div>
-			  </div>
+					</div>
+				</div>
+	  		</div>
 		  </div>
-	  </div>
-  </div>
 			<div class="row">
 				<div class="col-md-4">
 				</div>
@@ -217,10 +335,7 @@ OPTIONS:
 				<div class="col-md-4">
 				</div>
 			</div>
-		</div>
-	</div>
-</div>
-
+  </div>
     <script src="js/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/scripts.js"></script>

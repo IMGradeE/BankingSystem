@@ -3,11 +3,13 @@
      path = require('path'),
      cookieParser = require('cookie-parser'),
      logger = require('morgan'),
-     adminreportselectRouter = require('./routes/adminChangeLoginInfo'),
-     adminreportresultRouter = require('./routes/employeeViewUsers'),
      indexRouter = require('./routes/index'),
      loginUserRouter = require('./routes/loginuser'),
-     registerRouter = require('./routes/register');
+     baseRouter = require('./routes/base'),
+     adminActionRouter = require('./routes/adminAction'),
+     adminBaseRouter = require('./routes/adminBase'),
+     registerRouter = require('./routes/register'),
+     baseTransactions = require('./routes/baseTransactions');
 
  var session = require('express-session');
  var MySQLStore = require('express-mysql-session')(session);
@@ -56,8 +58,10 @@ app.use(express.static(path.join(__dirname, "node_modules/bootstrap-icons/")));
 app.use('/', indexRouter);
 app.use('/loginuser', loginUserRouter);
 app.use('/register', registerRouter);
-app.use('/adminreportresult', adminreportresultRouter);
-app.use('/adminreportselect', adminreportselectRouter);
+app.use('/adminBase', adminBaseRouter);
+app.use('/adminAction', adminActionRouter);
+app.use('/baseTransactions', baseTransactions);
+app.use('/base', baseRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

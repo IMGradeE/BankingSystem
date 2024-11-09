@@ -20,40 +20,36 @@ router.post('/', function(req, res, next) {
 
 
     console.log("loginuser.js: POST");
-    if (req.body.username === "admin"){
-        res.render('base', {
-            title: 'Support Tickets',
-            sections: [
-                {name: "Admin", pages: 2, queryResults: [], queryObj: null, tableTitle: "Password Reset Requests"}
-            ],
-            accessType: {
-                userType: 'admin',
-                navItems: [{title: "Support Tickets", ref:'link'}]
-            }
-        });
-    }else if(req.body.username === "customer"){
-        res.render('base', {
-            title: 'Accounts',
-            sections: [
-                {name: "Customer", pages: 2, queryResults: [], queryObj: null, tableTitle: "transaction history"}
-            ],
-            accessType: {
-                userType: 'customer',
-                navItems: [{title: "accounts", ref:'link'}]
-                }
-        });
-    }else if(req.body.username === "employee"){
-        res.render('base', {
-            title: 'View Users',
-            sections: [
-                {name: "Employee", pages: 2, queryResults: [], queryObj: null, tableTitle: "All Customers"}
-            ],
-            accessType: {
-                userType: 'employee',
-                navItems: [{title: "View Users", ref:'link'}]
-            }
-        });
+   options =  {
+        title: req.body.title,
+            page
+    :
+        req.body.page,
+
+            sections
+    :
+        [
+            {name: "Customer", pages: 2, queryResults: [], queryObj: null, tableTitle: "transaction history"}
+        ],
+            accessType
+    :
+        {
+            userType: 'customer',
+                navItems
+        :
+            [{title: "accounts", ref: 'link'}]
+        }
     }
+    if (req.body.username === "admin"){
+        res.redirect('/adminBase');
+    }else if(req.body.username === "employee"){
+        options.sections[0].tableTitle = "Savings";
+        options.sections[0].name = "Employee";
+        options.accessType.userType = "employee";
+        options.title = 'Hello, Employee.';
+        options.accessType.navItems[0].title = "View Users";
+    }
+    res.render('base', options);
 });
 
 module.exports = router;

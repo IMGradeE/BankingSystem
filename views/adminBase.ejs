@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Base Post-login page</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+
+  </head>
+  <body>
+<!--
+OPTIONS:
+	title,
+	tableTitle[],
+	tableHeaders[]
+	accessType = [userType, navItems[]{title, ref}, TODO ]
+	queryResults[]
+-->
+  <div class="container-fluid vh-100" style="margin-top:10px">
+	  <div class="" style="margin-top:100px">
+		  <div class="rounded d-flex justify-content-center">
+			  <div class="col-md-4 col-sm-12  shadow-lg p-5 bg-light">
+				  <div class="text-center">
+					  <h4 class="text-primary">Admin Tools</h4>
+				  </div>
+						<form method="post">
+							<div class="p-4">
+								<div class="mb-3">
+								<label for = "userID" class="form-label">User ID </label>
+									<input type="text" id="userID" name="userID" class="form-control" style="margin-left: 5px;">
+								</div>
+								<div class="input-group mb-3">
+									<div class="form-check">
+										<label for = "passwordReset" class="form-check-label">Reset Password</label>
+										<input type="radio" id="passwordReset" name="adminAction" value="password" class="form-check-input">
+
+									</div>
+								</div>
+								<div class="input-group mb-3">
+									<div class="form-check">
+										<label for = "alterRole" class="form-check-label">Alter User's Role</label>
+
+										<input type="radio" id="alterRole" name="adminAction" value="role" class="form-check-input">
+									</div>
+								</div>
+							</div>
+							<div class="text-center">
+								<input type="submit" class="btn btn-primary mt-2">
+							</div>
+							</form>
+								</div>
+							</div>
+						</div>
+					</div>
+			  </div>
+		  </div>
+	<div class="row">
+		<div class="col-md-4">
+		</div>
+		<div class="col-md-4">
+
+			<address>
+				 <strong>Banking, Inc.</strong><br> 555 F street, Suite 000 <br> City, State 555555<br> <abbr title="Phone">P:</abbr> (123) 456-7890
+			</address>
+		</div>
+		<div class="col-md-4">
+		</div>
+	</div>
+
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/scripts.js"></script>
+  </body>
+</html>
