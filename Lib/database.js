@@ -24,16 +24,17 @@ const conreg =
         }
     )
 
-con.connect(function (err, ) {
-    if(err) throw err;
-    console.log('Connected successfully.');
-    con.execute("CREATE DATABASE IF NOT EXISTS " + conInfo.DB_NAME, function (err, result){
-        if(err) throw err;
-        console.log('Database created.');
-        selectDatabase();
+function initDB() {
+    con.connect(function (err,) {
+        if (err) throw err;
+        console.log('Connected successfully.');
+        con.execute("CREATE DATABASE IF NOT EXISTS " + conInfo.DB_NAME, function (err, result) {
+            if (err) throw err;
+            console.log('Database created.');
+            selectDatabase();
+        });
     });
-});
-
+}
 function selectDatabase(){
     let sql = "use " + conInfo.DB_NAME + ";";
     con.query(sql, function (err, result){
@@ -141,6 +142,7 @@ function AddDummyDataToDatabase() {
 }
 
 exports.con = con;
+exports.initCon = initDB;
 exports.conreg = conreg;
 exports.registerUser = registerUser;
 

@@ -1,4 +1,5 @@
 var express = require('express');
+const registerUser = require("../Lib/database").registerUser;
 var router = express.Router();
 let con = require('../lib/database').conreg;
 
@@ -7,6 +8,7 @@ let con = require('../lib/database').conreg;
 router.get('/', function(req, res, next) {
 
     console.log("register.js: GET");
+    //TODO Pass list of users to check new registrations against
     res.render('register', { });
 });
 
@@ -14,7 +16,9 @@ router.get('/', function(req, res, next) {
 router.post('/', function(req, res, next) {
     
     console.log("register.js: POST");
-    res.redirect('/');
+    //TODO create the referenced user.
+    //registerUser()
+    res.redirect('/loginuser');
 });
 
 module.exports = router;

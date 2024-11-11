@@ -12,11 +12,12 @@
   <script>
     /*TODO prevent submission of form with placeholder values in select*/
     function checkPassword(event) {
+      return confirm('ECHO UID');//todo echo UID
     }
   </script>
 
 </head>
-
+<!--TODO Implement problem messages and form validation -->
 <body>
   <div class="container-fluid vh-100" style="margin-top:10px">
     <div class="" style="margin-top:100px">
@@ -59,7 +60,7 @@
               <input type="hidden" id="hash" name="hash">
               <input type="hidden" id="salt" name="salt">
               <div class="text-center">
-                <button class="btn btn-primary mt-2" type="submit">
+                <button id="submit" class="btn btn-primary mt-2" type="submit">
                   Create Account
                 </button>
               </div>

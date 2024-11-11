@@ -29,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // This will set up the database if it doesn't already exist
 var dbCon = require('./lib/database');
+dbCon.initCon();
 
 // Session management to store cookies in a MySQL server (this has a bug, so we assist it by creating the database for it)
 var dbSessionPool = require('./lib/sessionPool.js');
