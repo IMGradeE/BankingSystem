@@ -24,6 +24,15 @@ const conreg =
         }
     )
 
+function initCon(){
+    conreg.connect(function (err,) {
+        if (err) throw err;
+        let sql = "use " + conInfo.DB_NAME + ";";
+        conreg.query(sql, function (err, result){
+            if(err) throw err;});
+    })
+}
+
 function initDB() {
     con.connect(function (err,) {
         if (err) throw err;
@@ -63,37 +72,21 @@ function execSQL(arr, _type) {
     }
 }
 
-function registerUser(externalID, first_name, last_name, password, role){
-    let successFlag = 0;
-    let sql;
-
-    if (typeof role === "undefined") {
-        sql = "CALL register_user("+externalID+", '"+password+"', '"+first_name+"', '"+last_name+"', 1 , @ret);";
-    }else{
-        sql = "CALL register_user("+externalID+", '"+password+"', '"+first_name+"', '"+last_name+"', "+role+", @ret);";
-    }
-
-    con.execute(sql, function(err, results, fields) {
-        if (err) {
-            console.log(err.message);
-            throw err;
+function registerUser(externalID, first_name, last_name, password, role) {
+    return new Promise(async (resolve, reject) => {
+        let sql;
+        if (typeof role === "undefined") {
+            sql = "CALL register_user(" + externalID + ", '" + password + "', '" + first_name + "', '" + last_name + "', 1 );";
+        } else {
+            sql = "CALL register_user(" + externalID + ", '" + password + "', '" + first_name + "', '" + last_name + "', " + role + ");";
         }
-    });
-    con.execute("select @ret as ret;", function(err, result, fields) {
-        if (err) {
-            console.log(err.message);
-            throw err;
-        }
-        else{
-            successFlag = result[0]['ret'];
-            console.log(result[0]['ret'])
-        }
-        if(successFlag === 0){
-            console.log("Failed to add user: "+ first_name + " "+ last_name +" because the user already exists.");
-        }else{
-            console.log("Successfully added user: "+  first_name + " "+ last_name +". External ID: " + externalID);
-        }
-    });
+        con.execute(sql, function (err, results, fields) {
+            if (err) {
+                return reject(err);
+            }
+            return resolve(results);
+        });
+    })
 }
 
 function addTableData() {
@@ -103,7 +96,7 @@ function addTableData() {
     let fnArgs = [
         account = {tableName: 'account_types', funcName: 'insert_account_type', args: accountArgs},
         users = {tableName: 'user_roles', funcName: 'insert_user_role', args: userRoleArgs},
-        transactions = {tableName: 'transaction_types', funcName: 'insert_transaction_type', args: userRoleArgs}
+        transactions = {tableName: 'transaction_types', funcName: 'insert_transaction_type', args: transactionArgs}
     ]
     for (const fnArgsKey of fnArgs) {
         {
@@ -121,30 +114,53 @@ function addTableData() {
     }
 }
 
-function AddDummyDataToDatabase() {
-    let names = ["anne", "beetle", "codel", "dier", "john", "fort", "gray"];
-
-    for (let i = 0, j = 0; i < 49; i++, j = Math.trunc(i / names.length)) {
-        /* This doesn't work and I can't figure out how to get values out of this syntax
+function getUIDMax() {
+    return new Promise(async (resolve, reject) => {
         let sql = "select count(*) as cnt, max(external_id) as mx from users;";
         con.query(sql, function (err, results, fields) {
             if (err) {
-                console.log(err.message);
-                throw err;
+                return reject(err);
             }
-            console.log("F");
-            console.log(results[0]['mx']);
-            console.log("G");
-            value = {id: (results[0]['cnt'] === 0) ? 100000 : (results[0]['mx'] + 1)};
-        });*/
-        registerUser(i, names[i % 7], names[j], names[i] + names[j]);
+            return resolve((results[0]['cnt'] === 0) ? 100000 : (results[0]['mx'] + 1));
+        });
+    })
+}
+
+async function AddDummyDataToDatabase() {
+    let names = ["anne", "beetle", "codel", "dier", "john", "fort", "gray"];
+
+    for (let i = 0, j = 0; i < 49; i++, j = Math.trunc(i / names.length)) {
+        let role =  (i === 0)? ddl_.roles.admin : undefined;
+        await registerUserAndReturnExternalID(names[i % 7], names[j], names[i % 7] + names[j], role);
+       /* try {
+            let externalID = await getUIDMax();
+            await registerUser(externalID, names[i % 7], names[j], names[i%7] + names[j]);
+            console.log("Successfully added user " + names[i%7]+ " "+ names[j]+ " with externalID: " + externalID);
+        } catch (e) {
+            console.log(e.message)
+        }*/
     }
+}
+
+function registerUserAndReturnExternalID(first_name, last_name, password, role) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let externalID = await getUIDMax();
+            await registerUser(externalID, first_name, last_name, password, role);
+            console.log("Successfully added user " + first_name+ " "+ last_name+ " with externalID: " + externalID);
+            return resolve(externalID);
+        } catch (e) {
+            console.log(e.message)
+            return resolve(e);
+        }
+    })
 }
 
 exports.con = con;
 exports.initCon = initDB;
 exports.conreg = conreg;
-exports.registerUser = registerUser;
+exports.initConReg = initCon;
+exports.registerUser = registerUserAndReturnExternalID;
 
 
 

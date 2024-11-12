@@ -1,7 +1,6 @@
 var express = require('express');
-const registerUser = require("../Lib/database").registerUser;
 var router = express.Router();
-let con = require('../lib/database').conreg;
+let con = require('../lib/database');
 
 
 /* GET page. */
@@ -17,7 +16,7 @@ router.post('/', function(req, res, next) {
     
     console.log("register.js: POST");
     //TODO create the referenced user.
-    //registerUser()
+    con.registerUser(req.body.firstName, req.body.lastName, req.body.pass);
     res.redirect('/loginuser');
 });
 

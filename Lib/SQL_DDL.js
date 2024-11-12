@@ -76,7 +76,7 @@ const DBTableStatements = [
             "    FOREIGN KEY (user_role_id) REFERENCES user_roles (user_role_id),\n" +
             "    UNIQUE (external_id),\n" +
             "    UNIQUE (salt),\n" +
-            "    UNIQUE (first_name, last_name)\n" +
+            "    constraint unique_name UNIQUE (first_name, last_name)\n" +
             ");",
         name: "users"
     },
@@ -375,19 +375,14 @@ const DBProcedureStatements = [
             "        values (typeString);\n" +
             "    end if;\n" +
             "end;", name: "insert_account_type"},
-    register_user= { statement: "create procedure if not exists register_user(in externalID int, in unHashedPassword varchar(255),\n" +
-            "                                                 in firstName varchar(32),\n" +
-            "                                                 in lastName varchar(32), in userRoleID int, out registerSuccess bit(1))\n" +
-            "    begin\n" +
-            "        if externalID not in (select external_id from users) then\n" +
-            "            set registerSuccess = b'1';\n" +
-            "        set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
-            "        insert into users(external_id, hashed_password, salt, first_name, last_name, user_role_id)\n" +
-            "        values (externalID, SHA1(CONCAT(unHashedPassword, @salt)), @salt, firstName, lastName, userRoleID);\n" +
-            "            else\n" +
-            "            set registerSuccess = b'0';\n" +
-            "        end if;\n" +
-            "    end;", name: "register_user"},
+    register_user= { statement: " create procedure if not exists register_user(in externalID int, in unHashedPassword varchar(255),\n" +
+            "                                                             in firstName varchar(32),\n" +
+            "                                                             in lastName varchar(32), in userRoleID int)\n" +
+            "                begin\n" +
+            "                    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
+            "                    insert into users(external_id, hashed_password, salt, first_name, last_name, user_role_id)\n" +
+            "                    values (externalID, SHA1(CONCAT(unHashedPassword, @salt)), @salt, firstName, lastName, userRoleID);\n" +
+            "                end;", name: "register_user"},
     check_credentials= { statement: "create procedure if not exists check_credentials(in externalID int, in unHashedPassword varchar(255),\n" +
             "                                                 out userRoleID int,\n" +
             "                                                 out credentialsAuthorized bit(1))\n" +
