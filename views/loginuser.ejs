@@ -19,14 +19,15 @@
     function checkUserType(event) {
       return document.getElementById("username").textContent;
     }
+    function showEID(event) {return confirm('Your External ID: <%=externalID%>');}
   </script>
 
 </head>
 
-<body>
+<body <%if(externalID !== undefined){%> onload="showEID(event)"<%}%>>
   <div class="container-fluid vh-100" style="margin-top:10px">
     <div class="" style="margin-top:100px">
-      <div class="rounded d-flex justify-content-center">
+      <div class="rounded d-flex justify-content-center" >
         <div class="col-md-4 col-sm-12 shadow-lg p-5 bg-light">
           <div class="text-center">
             <h3 class="text-primary">Sign In</h3>
@@ -37,7 +38,7 @@
                 <span class="input-group-text bg-primary">
                   <i class="bi bi-person-plus-fill text-white"></i>
                 </span>
-                <input id="username" name="username" type="text" class="form-control" autofocus="autofocus" placeholder="Username">
+                <input id="externalID" name="externalID" type="text" <%if(externalID !== undefined){%>value="<%=externalID%>"<%}%> class="form-control" autofocus="autofocus" placeholder="External ID">
               </div>
               <div>
                 <p id="message" class="text-danger">
@@ -46,15 +47,13 @@
               </div>
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>
-                <input id="password" type="password" class="form-control" autofocus="autofocus" placeholder="password">
+                <input id="password" name="password" type="password" class="form-control" autofocus="autofocus" placeholder="password">
               </div>
               <div>
                 <p id="message" class="text-danger">
                   PROBLEM MESSAGE HERE
                 </p>
               </div>
-              <input type="hidden" id="salt" name="salt" value="">
-              <input type="hidden" id="hashedPassword" name="hashedPassword" value="">
               <input type="hidden" id="page" name="page" value="overview">
               <div class="text-center">
                 <button class="btn btn-primary mt-2" type="submit">

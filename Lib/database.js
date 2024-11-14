@@ -1,6 +1,9 @@
-let mysql = require('mysql2');
 const ddl_ = require('./SQL_DDL');
-const conInfo = require('./connectionInfo');
+
+const conInfo = require("./connectionInfo");
+let mysqlP = require('mysql2/promise');
+let mysql = require('mysql2');
+
 
 const con =
     mysql.createConnection(
@@ -23,6 +26,7 @@ const conreg =
             multipleStatements: true              // Needed for stored procedures with OUT results
         }
     )
+
 
 function initCon(){
     conreg.connect(function (err,) {
@@ -114,6 +118,20 @@ function addTableData() {
     }
 }
 
+async function registerUserAndReturnExternalID(first_name, last_name, password, role) {
+    return new Promise(async (resolve) => {
+        try {
+            let externalID = await getUIDMax();
+            await registerUser(externalID, first_name, last_name, password, role);
+            console.log("Successfully added user " + first_name+ " "+ last_name+ " with externalID: " + externalID);
+            return resolve(externalID);
+        } catch (e) {
+            console.log(e.message)
+            return resolve(e);
+        }
+    })
+}
+
 function getUIDMax() {
     return new Promise(async (resolve, reject) => {
         let sql = "select count(*) as cnt, max(external_id) as mx from users;";
@@ -142,19 +160,6 @@ async function AddDummyDataToDatabase() {
     }
 }
 
-function registerUserAndReturnExternalID(first_name, last_name, password, role) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let externalID = await getUIDMax();
-            await registerUser(externalID, first_name, last_name, password, role);
-            console.log("Successfully added user " + first_name+ " "+ last_name+ " with externalID: " + externalID);
-            return resolve(externalID);
-        } catch (e) {
-            console.log(e.message)
-            return resolve(e);
-        }
-    })
-}
 
 exports.con = con;
 exports.initCon = initDB;

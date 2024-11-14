@@ -1,33 +1,42 @@
 const conInfo = require("./connectionInfo");
-const con = require("database").conreg;
-const register_user = require("database").registerUser;
-var transactionTypes = require('Lib/SQL_DDL').transactionTypes;
+const {con} = require("../lib/database");
+const {sqlBool} = require("./SQL_DDL");
+var transactionTypes = require('../lib/SQL_DDL').transactionTypes;
 // write procedure calls
-
 //static
 class BankUtils {
     /*in externalID int, in unHashedPassword varchar(255), out userRoleID int, out credentialsAuthorized bit(1)
     returns boolean indicating whether the credentials are valid.*/
-    static check_credentials(externalID, unHashedPassword) {
-        // TODO I don't know if I need to pass userRoleID and CredentialsAuthorized
-        let sql = "call check_credentials(" + externalID + "," + unHashedPassword + ", userRoleID, credentialsAuthorized);";
+    static async check_credentials(externalID, unHashedPassword) {
+        let sql = "call check_credentials(" + externalID + ",'" + unHashedPassword + "', @userRoleID, @credentialsAuthorized);";
         try{
-            let results = con.query(sql, function (err, result){
-                if(err) {
-                    console.log(err.message);
-                    throw err;
-                }
-            });
-            console.log("Credentials are authorized.");
-            return {authed: results['credentialsAuthorized'][0] , role: results['userRoleID'][0] };
-        }catch (QueryError){
+            await new Promise(async (resolve, reject) => {
+                con.execute(sql, function (err, result){
+                    if(err) {
+                        console.log(err.message);
+                        return reject(err);
+                    }
+                    return resolve(result);
+                })
+            })
+            let results = await new Promise(async (resolve, reject) => {
+                con.execute("select @userRoleID as role, @credentialsAuthorized as authed", function (err, result){
+                    if(err) {
+                        console.log(err.message);
+                        return reject(err);
+                    }
+                    return resolve(result);
+                })
+            })
+            return {authed: (results[0]['authed'] === sqlBool.true) , role: results[0]['role'] };
+        }catch (e){
             return {authed: false, role: null};
         }
     }
 
     /*in externalID int, in unHashedPassword varchar(255), in firstName varchar(32),
      in lastName varchar(32), in userRoleID int, out registerSuccess bit(1)*/
-    static register_user = register_user;
+    static register_user = con.register_user;
 
 }
 /*
@@ -48,22 +57,55 @@ let sql = "call _("+ _ + "," + ");";
 */
 
 class User {
-    userInfo;
-
-    /*Throws ERROR */
-    constructor(externalID) {
-        this.userInfo = this.get_user_info(externalID);
+    constructor(userInfo) {
+        this.external_id = userInfo[0][0].external_id;
+        this.user_role_id = userInfo[0][0].user_role_id;
+        this.role = userInfo[0][0].role;
+        this.name = userInfo[0][0].first_name + " " + userInfo[0][0].last_name;
+        for (const row in userInfo[0]) {
+            this.accounts.push({
+                account_id: row.account_id,
+                account_type_id:  row.account_type_id,
+                account_type: row.type,
+                addressable: row.addressable
+            })
+        }
     }
 
+    static async create(externalID){
+        let userInfo = await User.get_user_info(externalID);
+        return new User(userInfo);
+    }
+
+    external_id;
+    name;
+    accounts = [];
+    user_role_id;
+    role;
     /*in externalID int*/
-    get_user_info(externalID) {
-        let sql = "call get_user_info(" + externalID + ");";
-        return con.query(sql, function (err, result) {
-            if (err) throw err;
-            return result;
-        });
+    static async get_user_info(externalID) {
+        return new Promise(async (resolve) => {
+            try {
+                let results = await User.getUserInfoPromise(externalID);
+                return resolve(results);
+            } catch (e) {
+                console.log(e.message)
+                return resolve(e);
+            }
+        })
     }
 
+    static getUserInfoPromise(externalID){
+        return new Promise(async (resolve, reject) => {
+            let sql = "call get_user_info(" + externalID + ");";
+            con.query(sql, function (err, results, fields) {
+                if (err) {
+                    return reject(err);
+                }
+                return resolve(results);
+            });
+        })
+    }
 }
 
 class Admin extends User {
@@ -71,9 +113,14 @@ class Admin extends User {
         super(externalID);
     }
 
-    /*in externalID int, in newPassword varchar(255)*/
+    static async create(externalID){
+        let userInfo = await User.get_user_info(externalID);
+        return new Admin(userInfo);
+    }
+
+    /*in externalID int, in newPassword varchar(255)*//*TODO fix*/
     reset_password(externalID, newPassword) {
-        let sql = "call reset_password(" + externalID + "," + newPassword + ");";
+        let sql = "call reset_password(" + externalID + ",'" + newPassword + "');";
         try {
             con.query(sql, function (err, result) {
                 if (err) {
@@ -87,11 +134,10 @@ class Admin extends User {
             return false;
         }
     }
-
     /*in targetRole int, in userID int, out roleAltered bit(1),
-    out errormsg varchar(18)*/
+    out errormsg varchar(18)*//*TODO fix*/
     alter_user_role(targetRole, externalID) {
-        let sql = "call alter_user_role(" + targetRole + "," + externalID + ", roleAltered, errormsg);";
+        let sql = "call alter_user_role(" + targetRole + "," + externalID + ", @roleAltered, @errormsg);";
         let procResult;
         let procMsg;
         try {
@@ -100,27 +146,24 @@ class Admin extends User {
                     console.log(err.message);
                     throw err;
                 }
-                procResult = result['roleAltered'][0];
+                console.log(result['roleAltered'][0]);
                 procMsg = result['errormsg'][0];
             });
-            if (procResult) {
-                console.log("Role Altered successfully.");
-                return true;
-            } else {
-                console.log(procMsg);
-                return false;
-            }
         } catch (QueryError) {
-            return false;
+            console.log(QueryError);
         }
     }
 }
 
 class Customer extends User {
+    userType = 1
     constructor(externalID) {
         super(externalID);
     }
-
+    static async create(externalID){
+        let userInfo = await User.get_user_info(externalID);
+        return new Customer(userInfo);
+    }
     /*in origin int, in type int, in target int, in initiatedBy int,
     in memo text,
     in amount int,
@@ -364,13 +407,15 @@ class Customer extends User {
 }
 
 class Employee extends Customer {
-    constructor(externalID, firstName, lastName) {
-        super(externalID, firstName, lastName);
+    userType = 2
+    constructor(externalID) {
+        super(externalID);
     }
 }
 
 exports.Employee = Employee;
 exports.Customer = Customer;
+exports.User = User;
 exports.Admin = Admin;
 exports.BankUtils = BankUtils;
 

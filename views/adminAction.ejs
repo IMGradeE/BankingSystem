@@ -28,14 +28,24 @@ OPTIONS:
 		<div class="rounded d-flex justify-content-center">
 			<div class="col-md-4 col-sm-12  shadow-lg p-5 bg-light">
 				  <div class="text-center">
-					  <h3 class="text-primary"><%=opts.title;%></h3>
+					  <h3 class="text-primary"><%=title;%></h3>
 				  </div>
 					<form method="post">
 						<div class = "offset-1">
-							<div class="mb-3"><%=opts.userID%></div>
-							<div class="mb-3"><%=opts.name%></div>
+							<div class="mb-3 text-secondary-emphasis">
+								<label for="echoID" class="form-label text-primary-emphasis" >User ID</label>
+								<input class="form-control" id="echoID" style="margin-left: 5px;" type="text" disabled value="<%=userID%>">
+							</div>
+							<div class="mb-3 text-secondary-emphasis">
+								<label for="echoName" class="form-label text-primary-emphasis" >User Name</label>
+								<input class="form-control" id="echoName" style="margin-left: 5px;" type="text" disabled value="<%=name%>">
+							</div>
+							<div class="mb-3 text-secondary-emphasis">
+								<label for="echoType" class="form-label text-primary-emphasis" >User Type</label>
+								<input class="form-control" id="echoType" style="margin-left: 5px;" type="text" disabled value="<%=role%>">
+							</div>
 							<div class="p-4">
-								<%if(opts.action === "password"){%>
+								<%if(action === "password"){%>
 									<div class="mb-3">
 										<label for="newPassword" class="form-label">New Password</label>
 										<input class="form-control" style="margin-left: 5px;" type="text" id="newPassword" name="newPassword">
@@ -47,15 +57,15 @@ OPTIONS:
 								<%}else{%>
 									<div class="form-check">
 										<label for="Admin" class="form-check-label">Admin</label>
-										<input type="radio" id="Admin" name="desiredRole" value="Admin" class="form-check-input">
+										<input type="radio" id="Admin" name="desiredRole" value="admin" class="form-check-input">
 									</div>
 									<div class="form-check">
 										<label for="Employee" class="form-check-label">Employee</label>
-										<input type="radio" id="Employee" name="desiredRole" value="Employee" class="form-check-input">
+										<input type="radio" id="Employee" name="desiredRole" value="employee" class="form-check-input">
 									</div>
 									<div class="form-check">
 										<label for="Customer" class="form-check-label">Customer</label>
-										<input type="radio" id="Customer" name="desiredRole" value="Customer" class="form-check-input">
+										<input type="radio" id="Customer" name="desiredRole" value="customer" class="form-check-input">
 									</div>
 								<%}%>
 							</div>

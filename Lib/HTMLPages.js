@@ -1,7 +1,7 @@
 class HTMLPages{
     navPills = {
         sectionOpener: '<div class="col-md-1"><ul class="nav flex-column nav-pills">',
-        pump:'<li class="nav-item"> <a class="nav-link active" href=<%=navs[i].href%>><%=navs[i].linkTitle%></a>',
+        pump:'<li class="nav-item"> <a class="nav-link active" href=<%=navItems[i].href%>><%=navItems[i].title%></a>',
         sectionCloser:'</ul></div>'
     }
 
@@ -39,26 +39,4 @@ class HTMLPages{
         sectionCloser: '<li className="page-item"> <a className="page-link" href="<!--TODO get the text of this element as num * n entries and redraw table-->">Next</a> </li>'
     }
 
-}
-
-class AdminBasePage extends HTMLPages {
-    constructor() {
-        super();
-    }
-
-    render() {
-        // do not render tables or nav-pills
-    }
-}
-
-class userBasePage extends HTMLPages{
-    constructor() {
-        super();
-    }
-    // nav-pills:
-
-    render(){
-
-
-    }
 }

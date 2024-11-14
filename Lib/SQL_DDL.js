@@ -18,10 +18,10 @@ const transactionTypes = Object.freeze({
 })
 
 const sqlBool = Object.freeze({
-    true:"b'1'",
-    false:"b'0'",
-    "b'1'":true,
-    "b'0'":false
+    true:1,
+    false:0,
+    1:true,
+    0:false
 })
 
 const accountTypes = Object.freeze({
@@ -235,7 +235,9 @@ const DBViewStatements = [
     },
     user_info = {
         statement: "create or replace view user_info as\n" +
-            "select account_id,\n" +
+            "select first_name,\n" +
+            "       last_name,\n" +
+            "       account_id,\n" +
             "       account_cents,\n" +
             "       a.account_type_id,\n" +
             "       addressable,\n" +
@@ -312,11 +314,11 @@ const DBProcedureStatements = [
             "        set depositSuccess = "+sqlBool.false+";\n" +
             "    end if;\n" +
             "end;", name: "initiate_deposit"},
-    reset_password= { statement: "create procedure if not exists reset_password(in external_id int, in unhashedPassword varchar(255))\n" +
+    reset_password= { statement: "create procedure if not exists reset_password(in externalID int, in unhashedPassword varchar(255))\n" +
             "begin\n" +
             "    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
             "    update users\n" +
-            "    set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)) and salt = @salt\n" +
+            "    set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)), salt = @salt\n" +
             "    where external_id = externalID;\n" +
             "end;", name: "reset_password"},
     alter_user_role= { statement: "create procedure if not exists alter_user_role(in targetRole int, in externalID int, out roleAltered bit(1),\n" +
@@ -382,6 +384,9 @@ const DBProcedureStatements = [
             "                    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
             "                    insert into users(external_id, hashed_password, salt, first_name, last_name, user_role_id)\n" +
             "                    values (externalID, SHA1(CONCAT(unHashedPassword, @salt)), @salt, firstName, lastName, userRoleID);\n" +
+            "                    insert into accounts(account_type_id, user_id)\n" +
+            "                    values(" + accountTypes.savings + ", (select user_id from users where users.external_id = externalID)),\n " +
+            "                    (" + accountTypes.checking + ", (select user_id from users where users.external_id = externalID));\n " +
             "                end;", name: "register_user"},
     check_credentials= { statement: "create procedure if not exists check_credentials(in externalID int, in unHashedPassword varchar(255),\n" +
             "                                                 out userRoleID int,\n" +
@@ -416,7 +421,7 @@ const DBProcedureStatements = [
             "end;", name: "view_all_history"},
     get_user_info= { statement: "create procedure if not exists get_user_info(in externalID int)\n" +
             "begin\n" +
-            "    select * from user_info where external_id = externalID;\n" +
+            "    select * from user_info where external_id = externalID order by a.account_type_id;\n" +
             "end;", name: "get_user_info"},
     get_incoming_transfers= { statement: "create procedure if not exists get_incoming_transfers(in accountID int)\n" +
             "begin\n" +
