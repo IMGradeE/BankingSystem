@@ -9,49 +9,30 @@ router.get('/', function(req, res, next) {
 
     console.log("loginuser.js: GET");
 
-    res.render('loginuser', {externalID : req.query.externalID });
+    res.render('loginuser', {externalID : req.query.externalID, error: decodeURI(req.query.error)});
 });
 
 /* POST page. */
 router.post('/', async function(req, res, next) {
-    /*Pass assets like nav-list-items, section headers, etc as appropriate to the base page to alter it*/
-
-/*OPTIONS:
-	title,
-	sections[] = [{name, pages, queryResults[], queryObj, tableTitle, TODO }]
-	accessType = [userType, navItems[]{title, ref}, TODO ]
-	*/
-    options =  {
-        title: "overview",
-        page: req.body.page,
-        name: "Customer", tableTitle: "transaction history",
-            userType: 'customer',
-            navItems: [{title: "accounts", href: 'link'}]
-    }
     console.log("loginuser.js: POST");
-    // query for the externalID and other stuff I guess
-    const authResults = await BankUtils.check_credentials(req.body.externalID, req.body.password);
+    let external_id = req.body.externalID;
+    // TODO auth externalID and password separately so an error can be displayed appropriately.
+    const authResults = await BankUtils.check_credentials(external_id, req.body.password);
     if (authResults.authed === true) {
-        console.log("Authorized");
-        if (authResults.role === roles.admin){
-            const query = encodeURIComponent(req.body.externalID);
+        console.log("Login Authorized");
+        if (authResults.role === roles.admin) {
+            const query = encodeURIComponent(external_id);
             res.redirect('/adminBase?externalID=' + query);
-        }else if(authResults.role === roles.employee){
-            options.tableTitle = "Savings";
-            options.name = "Employee";
-            options.userType = "employee";
-            options.title = 'Hello, Employee.';
-            options.navItems[0].title = "View Users";
-            const query = querystring.stringify(options);
-            res.redirect('/base?' + query);
-
-        }else if(authResults.role === roles.customer){
-            const query = querystring.stringify(options);
-            res.redirect('/base?' + query);
+            return;
+        }else {
+            res.redirect('/base?externalID=' + external_id + '&role=' + authResults.role);
+            return;
         }
     }else{
-        console.log("Not authorized");
+        let error = encodeURIComponent("No user found matching these credentials.");
+        console.log("Login Not Authorized");
         // render login again, reset form and display error.
+        res.redirect('loginuser?error=' + error);
     }
 });
 

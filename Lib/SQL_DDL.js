@@ -324,18 +324,19 @@ const DBProcedureStatements = [
     alter_user_role= { statement: "create procedure if not exists alter_user_role(in targetRole int, in externalID int, out roleAltered bit(1),\n" +
             "                                               out errormsg varchar(18))\n" +
             "begin\n" +
-            "    set roleAltered = "+sqlBool.true+";\n" +
+            "    set roleAltered = "+sqlBool.false+";\n" +
             "    if targetRole in (select user_role_id from user_roles where role = '"+ userRoles[userRoles.admin] +"') then\n" +
-            "        if userID in (select user_id from accounts where external_id = externalID and account_cents > 0) then\n" +
+            "        if exists (select users.user_id, users.external_id from accounts inner join users on users.user_id = accounts.user_id where external_id = externalID and account_cents > 0) then\n" +
             "            set roleAltered = "+sqlBool.false+";\n" +
-            "            set errormsg = 'Has accounts open.';\n" +
+            "            set errormsg = 'User cannot be made an admin until all account balances are 0.';\n" +
             "        else\n" +
             "            update users\n" +
             "            set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.admin]+"')\n" +
-            "            where external_id = externalID;\n" +
+            "            where users.external_id = externalID;\n" +
             "            update accounts\n" +
             "            set addressable = "+sqlBool.false+"\n" +
-            "            where external_id = externalID;\n" +
+            "            where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
+            "            set roleAltered = "+userRoles.admin+";\n" +
             "        end if;\n" +
             "    elseif targetRole in (select user_role_id from user_roles where role = '"+userRoles[userRoles.customer]+"') then\n" +
             "        update users\n" +
@@ -343,14 +344,14 @@ const DBProcedureStatements = [
             "        where external_id = externalID;\n" +
             "        update accounts\n" +
             "        set addressable = "+sqlBool.true+"\n" +
-            "        where external_id = externalID;\n" +
+            "        where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
             "    elseif targetRole in (select user_role_id from user_roles where role = '"+userRoles[userRoles.employee]+"') then\n" +
             "        update users\n" +
             "        set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.employee]+"')\n" +
             "        where external_id = externalID;\n" +
             "        update accounts\n" +
             "        set addressable = "+sqlBool.true+"\n" +
-            "        where external_id = externalID;\n" +
+            "        where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
             "    else\n" +
             "        set roleAltered = "+sqlBool.false+";\n" +
             "        set errormsg = 'Invalid role.';\n" +
@@ -384,9 +385,6 @@ const DBProcedureStatements = [
             "                    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
             "                    insert into users(external_id, hashed_password, salt, first_name, last_name, user_role_id)\n" +
             "                    values (externalID, SHA1(CONCAT(unHashedPassword, @salt)), @salt, firstName, lastName, userRoleID);\n" +
-            "                    insert into accounts(account_type_id, user_id)\n" +
-            "                    values(" + accountTypes.savings + ", (select user_id from users where users.external_id = externalID)),\n " +
-            "                    (" + accountTypes.checking + ", (select user_id from users where users.external_id = externalID));\n " +
             "                end;", name: "register_user"},
     check_credentials= { statement: "create procedure if not exists check_credentials(in externalID int, in unHashedPassword varchar(255),\n" +
             "                                                 out userRoleID int,\n" +

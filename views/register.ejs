@@ -9,10 +9,20 @@
   <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
   <link rel="stylesheet" type="text/css" href="font/bootstrap-icons.css" />
   <script src="./javascripts/selectPlaceholder.js"></script>
-
+  <!--TODO add required fields to all forms-->
   <script>
     /*TODO prevent submission of form with placeholder values in select*/
     function checkPassword(event) {
+      //TODO Delete and replace with regex validation, insert the regex with EJS from NODE side.
+    }
+
+    // TODO move to EJS side
+    function trimInput(event){
+        let s = event.target.getAttribute('value').trim();
+        event.target.value = s;
+    }
+
+    function checkFilled(){
 
     }
   </script>
@@ -27,20 +37,20 @@
           <div class="text-center">
             <h3 class="text-primary">Register New Account</h3>
           </div>
-          <form onSubmit="return checkPassword(event);" method="post">
+          <form onSubmit="" method="post">
             <div class="p-4">
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary">
                   <i class="bi bi-person-vcard-fill text-white"></i>
                 </span>
-                <input id="username" name="firstName" type="text" class="form-control" placeholder="First Name">
+                <input id="firstname" name="firstName" type="text" class="form-control" placeholder="First Name">
               </div>
               <!--Name-->
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary">
                   <i class="bi bi-person-plus-fill text-white"></i>
                 </span>
-                <input id="name" name="lastName" type="text" class="form-control" placeholder="Last Name">
+                <input id="lastname" name="lastName" type="text" class="form-control" placeholder="Last Name">
               </div>
 
               <div class="input-group mb-3">

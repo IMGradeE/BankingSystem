@@ -34,6 +34,20 @@ class BankUtils {
         }
     }
 
+
+    static get_users_array(){
+        return new Promise((resolve, reject) => {
+            let sql = "select * from users;";
+            con.query(sql, function (err, results) {
+                if (err) {
+                    console.log(err.message);
+                    reject(err);
+                }
+                return resolve(results);
+            })
+        })
+    }
+
     /*in externalID int, in unHashedPassword varchar(255), in firstName varchar(32),
      in lastName varchar(32), in userRoleID int, out registerSuccess bit(1)*/
     static register_user = con.register_user;
@@ -84,13 +98,13 @@ class User {
     role;
     /*in externalID int*/
     static async get_user_info(externalID) {
-        return new Promise(async (resolve) => {
+        return new Promise(async (resolve, reject) => {
             try {
                 let results = await User.getUserInfoPromise(externalID);
                 return resolve(results);
             } catch (e) {
                 console.log(e.message)
-                return resolve(e);
+                return reject(e);
             }
         })
     }
@@ -109,8 +123,8 @@ class User {
 }
 
 class Admin extends User {
-    constructor(externalID) {
-        super(externalID);
+    constructor(userInfo) {
+        super(userInfo);
     }
 
     static async create(externalID){
@@ -118,7 +132,8 @@ class Admin extends User {
         return new Admin(userInfo);
     }
 
-    /*in externalID int, in newPassword varchar(255)*//*TODO fix*/
+    /*in externalID int, in newPassword varchar(255)*/
+    //TODO move error handling to route so messages can be displayed to user.
     reset_password(externalID, newPassword) {
         let sql = "call reset_password(" + externalID + ",'" + newPassword + "');";
         try {
@@ -135,30 +150,37 @@ class Admin extends User {
         }
     }
     /*in targetRole int, in userID int, out roleAltered bit(1),
-    out errormsg varchar(18)*//*TODO fix*/
+    out errormsg varchar(18)*/
     alter_user_role(targetRole, externalID) {
-        let sql = "call alter_user_role(" + targetRole + "," + externalID + ", @roleAltered, @errormsg);";
-        let procResult;
-        let procMsg;
-        try {
-            con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log(result['roleAltered'][0]);
-                procMsg = result['errormsg'][0];
-            });
-        } catch (QueryError) {
-            console.log(QueryError);
-        }
+       return new Promise(async (resolve, reject) => {
+           let sql = "call alter_user_role(" + targetRole + "," + externalID + ", @roleAltered, @errormsg);";
+           con.query(sql, function (err, result) {
+               if (err) {
+                   console.log(err.message);
+                   reject(err);
+               }
+           });
+           sql = "select @errormsg as errormsg, @roleAltered as altered;"
+           con.query(sql, function (err, result) {
+               if (err) {
+                   console.log(err.message);
+                   reject(err);
+               }
+               console.log(result);
+               // returns the nullable errormsg and rolealtered, which tells us whether the new role is admin.
+               return resolve(result);
+           });
+       })
     }
 }
 
 class Customer extends User {
-    userType = 1
-    constructor(externalID) {
-        super(externalID);
+    page ;
+    currentAccount;
+    constructor(userInfo) {
+        super(userInfo);
+        this.page = "overview";
+        this.currentAccount = "savings";
     }
     static async create(externalID){
         let userInfo = await User.get_user_info(externalID);
@@ -404,10 +426,19 @@ class Customer extends User {
         }
     }
 
+    insert_account(){
+        let sql = "call insert_account("+this.external_id+");";
+        con.query(sql, (err, result) =>{
+            if (err) console.log(err.message);
+            console.log("Successfully inserted account.");
+        })
+    }
+
 }
 
 class Employee extends Customer {
     userType = 2
+    selectedCustomer = null;
     constructor(externalID) {
         super(externalID);
     }

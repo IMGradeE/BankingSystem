@@ -20,11 +20,13 @@
       return document.getElementById("username").textContent;
     }
     function showEID(event) {return confirm('Your External ID: <%=externalID%>');}
+    function showError(event){return confirm('<%=error%>')}
   </script>
-
 </head>
-
-<body <%if(externalID !== undefined){%> onload="showEID(event)"<%}%>>
+<body
+<%if(externalID !== undefined){%> onload="showEID(event);"<%}%>
+<%if(error !== undefined){%> onload="showError(event);"<%}%>
+>
   <div class="container-fluid vh-100" style="margin-top:10px">
     <div class="" style="margin-top:100px">
       <div class="rounded d-flex justify-content-center" >

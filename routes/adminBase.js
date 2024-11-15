@@ -14,6 +14,7 @@ router.get('/', function(req, res, next) {
 router.post('/', function(req, res, next) {
     console.log(fileName + ".js: POST");
     const query = querystring.stringify(req.body) + encodeURI("&adminID="+req.query.externalID);
+    console.log(query)
     res.redirect('/adminAction?' + query);
 });
 

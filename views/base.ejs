@@ -12,7 +12,11 @@
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+	  <script>
+		  function checkFilled(event){
 
+		  }
+	  </script>
   </head>
   <body>
 <!--
@@ -29,7 +33,7 @@ OPTIONS:
 		  <div class="rounded d-flex justify-content-center">
 			  <div class="col-lg-12 shadow-lg p-5 bg-light">
 				  <div class="text-center">
-					  <h3 class="text-primary"><%=title;%></h3>
+					  <h3 class="text-primary"><%=user.page;%></h3>
 				  </div>
 						<div class="row">
 							<div class="col-md-12">
@@ -38,8 +42,10 @@ OPTIONS:
 										<ul class="nav flex-column nav-pills">
 											<!--TODO-->
 											<li class="nav-item">
-												<a class="nav-link"><form method="post">
-														<input type="text" value= "Initiate a Transfer" name="title" hidden="hidden"><input type="text" value="transfer" hidden="hidden" name="page"><button type = "submit" class="btn btn-light">Transfers</button></form></a>
+												<a class="nav-link" href="/base?externalID=<%=user.external_id%>&role=<%=user.user_role_id%>&setCurrentAccount=savings<%if(user.accounts.length === 0){%>&add=true<%}%>">Savings</a>
+											</li>
+											<li class="nav-item">
+												<a class="nav-link <%if(user.accounts.length < 1){%>disabled<%}%>" href="/base?externalID=<%user.external_id%>&role=<%=user.user_role_id%>setCurrentAccount=checking<%if(user.accounts.length === 1){%>&add=true<%}%>">Checking</a>
 											</li>
 											<li class="nav-item">
 												<a class="nav-link"><form method="post">
@@ -53,7 +59,7 @@ OPTIONS:
 												<a class="nav-link"><form method="post">
 														<input type="text" value= "Initiate a Transfer" name="title" hidden="hidden"><input type="text" value="transfer" hidden="hidden" name="page"><button type = "submit" class="btn btn-light">Transfers</button></form></a>
 											</li>
-											<%if(userType === "employee"){%>
+											<%if(user.role === "employee"){%>
 												<!--TODO-->
 												<li class="nav-item dropdown ml-md-auto">
 													<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown">Enter Customer Account</a>
@@ -75,8 +81,8 @@ OPTIONS:
 										</ul>
 									</div>
 									<div class="col-md-10 rounded shadow-sm">
-										<%if(page == "overview" || page === "deposit" || page === "withdrawal" ){%>
-										<%if(page === "deposit"){%>
+										<%if(user.page == "overview" || user.page === "deposit" || user.page === "withdrawal" ){%>
+										<%if(user.page === "deposit"){%>
 											<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
 
 											<form method="post">
@@ -97,7 +103,7 @@ OPTIONS:
 
 										</form>
 										</div>
-										<%}else if(page === "withdrawal"){%>
+										<%}else if(user.page === "withdrawal"){%>
 										<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
 											<form method="post">
 											<div class="mb-3">
@@ -119,12 +125,14 @@ OPTIONS:
 										</div>
 
 											<%}%>
+										<%if(account === "savings"){%>
 
+										<%}%>
 										<div class="row shadow-sm bg-body">
 
 											<div class = "col-8">
 												<h3>
-													<%=tableTitle%>
+													<%=user.currentAccount%>
 												</h3>
 											</div>
 											<div class = "col-2 text-sm-end">

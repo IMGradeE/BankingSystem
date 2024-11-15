@@ -119,15 +119,14 @@ function addTableData() {
 }
 
 async function registerUserAndReturnExternalID(first_name, last_name, password, role) {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
         try {
             let externalID = await getUIDMax();
             await registerUser(externalID, first_name, last_name, password, role);
             console.log("Successfully added user " + first_name+ " "+ last_name+ " with externalID: " + externalID);
             return resolve(externalID);
         } catch (e) {
-            console.log(e.message)
-            return resolve(e);
+            return reject(e);
         }
     })
 }
@@ -149,7 +148,12 @@ async function AddDummyDataToDatabase() {
 
     for (let i = 0, j = 0; i < 49; i++, j = Math.trunc(i / names.length)) {
         let role =  (i === 0)? ddl_.roles.admin : undefined;
-        await registerUserAndReturnExternalID(names[i % 7], names[j], names[i % 7] + names[j], role);
+        try{
+            await registerUserAndReturnExternalID(names[i % 7], names[j], names[i % 7] + names[j], role);
+        }
+        catch (e){
+            console.log(e.message)
+        }
        /* try {
             let externalID = await getUIDMax();
             await registerUser(externalID, names[i % 7], names[j], names[i%7] + names[j]);
