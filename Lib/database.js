@@ -4,7 +4,6 @@ const conInfo = require("./connectionInfo");
 let mysqlP = require('mysql2/promise');
 let mysql = require('mysql2');
 
-
 const con =
     mysql.createConnection(
         {
@@ -145,15 +144,19 @@ function getUIDMax() {
 
 async function AddDummyDataToDatabase() {
     let names = ["anne", "beetle", "codel", "dier", "john", "fort", "gray"];
+    // TODO generate transaction history for non-admins, check if admin creation works on accounts with balances.
+    // initial deposit, then withdrawals
 
     for (let i = 0, j = 0; i < 49; i++, j = Math.trunc(i / names.length)) {
         let role =  (i === 0)? ddl_.roles.admin : undefined;
         try{
-            await registerUserAndReturnExternalID(names[i % 7], names[j], names[i % 7] + names[j], role);
+            let uid = await registerUserAndReturnExternalID(names[i % 7], names[j], names[i % 7] + names[j], role);
+
         }
         catch (e){
             console.log(e.message)
         }
+
        /* try {
             let externalID = await getUIDMax();
             await registerUser(externalID, names[i % 7], names[j], names[i%7] + names[j]);

@@ -8,6 +8,13 @@ const userRoles = Object.freeze({
     'admin':3
 })
 
+const accountIndices = Object.freeze({
+    0 : 'savings',
+    1 : 'checking',
+    'savings' : 0,
+    'checking' : 1
+})
+
 const transactionTypes = Object.freeze({
     1: 'transfer',
     2:'deposit',
@@ -95,26 +102,31 @@ const DBTableStatements = [
         name: "accounts\n"
     },
     account_transactions= {
-        statement: "CREATE TABLE IF NOT EXISTS account_transactions\n" +
+        statement: "\n" +
+            "create table if not exists banking_system.account_transactions\n" +
             "(\n" +
-            "    transaction_id                   INT      NOT NULL AUTO_INCREMENT,\n" +
-            "    transaction_type_id              INT      NOT NULL DEFAULT "+transactionTypes.transfer+",\n" +
-            "    transaction_memo                 TEXT              DEFAULT NULL,\n" +
-            "    transaction_timestamp            DATETIME NOT NULL DEFAULT NOW(),\n" +
-            "    transaction_source_account_id    INT,\n" +
-            "    transaction_target_account_id    INT,\n" +
-            "    transaction_initiated_by_user_id INT      NOT NULL,\n" +
-            "    transaction_amount_cents         INT      NOT NULL,\n" +
-            "    initial_cents_origin             INT      NOT NULL DEFAULT (0),\n" +
-            "    initial_cents_target             INT      NOT NULL DEFAULT (0),\n" +
-            "    new_cents_origin                 INT,\n" +
-            "    new_cents_target                 INT,\n" +
-            "    PRIMARY KEY (transaction_id),\n" +
-            "    FOREIGN KEY (transaction_type_id) REFERENCES transaction_type (transaction_type_id),\n" +
-            "    FOREIGN KEY (transaction_initiated_by_user_id) REFERENCES users (user_id),\n" +
-            "    FOREIGN KEY (transaction_source_account_id) REFERENCES accounts (account_id),\n" +
-            "    FOREIGN KEY (transaction_target_account_id) REFERENCES accounts (account_id)\n" +
-            ");",
+            "    transaction_id                   int auto_increment\n" +
+            "        primary key,\n" +
+            "    transaction_type_id              int      default 1                 not null,\n" +
+            "    transaction_memo                 text                               null,\n" +
+            "    transaction_timestamp            datetime default CURRENT_TIMESTAMP not null,\n" +
+            "    transaction_source_account_id    int                                null,\n" +
+            "    transaction_target_account_id    int                                null,\n" +
+            "    transaction_initiated_by_external_id int                                not null,\n" +
+            "    transaction_amount_cents         int                                not null,\n" +
+            "    initial_cents_origin             int      default (0)               not null,\n" +
+            "    initial_cents_target             int      default (0)               not null,\n" +
+            "    new_cents_origin                 int                                null,\n" +
+            "    new_cents_target                 int                                null,\n" +
+            "    constraint account_transactions_ibfk_1\n" +
+            "        foreign key (transaction_type_id) references banking_system.transaction_type (transaction_type_id),\n" +
+            "    constraint account_transactions_ibfk_2\n" +
+            "        foreign key (transaction_initiated_by_external_id) references banking_system.users (external_id),\n" +
+            "    constraint account_transactions_ibfk_3\n" +
+            "        foreign key (transaction_source_account_id) references banking_system.accounts (account_id),\n" +
+            "    constraint account_transactions_ibfk_4\n" +
+            "        foreign key (transaction_target_account_id) references banking_system.accounts (account_id)\n" +
+            ");\n",
         name: "account_transactions"
     }
 ];
@@ -123,25 +135,26 @@ const DBViewStatements = [
     view_transactions= {
         statement: "create or replace view view_transactions as\n" +
             "select transaction_id                                    'Transaction Number',\n" +
-            "       CONCAT('$', SIGN(act.initial_cents_origin) * ABS(act.initial_cents_origin) DIV 100, '.',\n" +
-            "              ABS(act.initial_cents_origin) MOD 100)     'Origin Starting Balance',\n" +
-            "       CONCAT('$', SIGN(act.initial_cents_target) * ABS(act.initial_cents_target) DIV 100, '.',\n" +
-            "              ABS(act.initial_cents_target) MOD 100)     'Target Starting Balance',\n" +
-            "       CONCAT('$', SIGN(act.transaction_amount_cents) * ABS(act.transaction_amount_cents) DIV 100, '.',\n" +
-            "              ABS(act.transaction_amount_cents) MOD 100) 'Amount',\n" +
-            "       CONCAT('$', SIGN(act.new_cents_origin) * ABS(act.new_cents_origin) DIV 100, '.',\n" +
-            "              ABS(act.new_cents_origin) MOD 100)         'Origin Final Balance',\n" +
-            "       CONCAT('$', SIGN(act.new_cents_target) * ABS(act.new_cents_target) DIV 100, '.',\n" +
-            "              ABS(act.new_cents_target) MOD 100)         'Target Final Balance',\n" +
+            "       CONCAT( SIGN(act.initial_cents_origin) * ABS(act.initial_cents_origin) DIV 100, '.',\n" +
+            "              RPAD(ABS(act.initial_cents_origin) MOD 100, 2, 0))     'Origin Starting Balance',\n" +
+            "       CONCAT( SIGN(act.initial_cents_target) * ABS(act.initial_cents_target) DIV 100, '.',\n" +
+            "              RPAD(ABS(act.initial_cents_target) MOD 100, 2, 0))     'Target Starting Balance',\n" +
+            "       CONCAT( SIGN(act.transaction_amount_cents) * ABS(act.transaction_amount_cents) DIV 100, '.',\n" +
+            "              RPAD(ABS(act.transaction_amount_cents) MOD 100, 2, 0)) 'Amount',\n" +
+            "       CONCAT( SIGN(act.new_cents_origin) * ABS(act.new_cents_origin) DIV 100, '.',\n" +
+            "              RPAD(ABS(act.new_cents_origin) MOD 100, 2, 0))         'Origin Final Balance',\n" +
+            "       CONCAT( SIGN(act.new_cents_target) * ABS(act.new_cents_target) DIV 100, '.',\n" +
+            "              RPAD(ABS(act.new_cents_target) MOD 100, 2, 0))         'Target Final Balance',\n" +
             "       concat(u.first_name, ' ', u.last_name)            'Initiated by',\n" +
             "       transaction_memo                                  'Memo',\n" +
             "       transaction_timestamp                             'Date and Time',\n" +
-            "       tt.type                                           'Transaction Type',\n" +
+            "       tt.type                                           'Type',\n" +
             "       transaction_source_account_id                     source_acct,\n" +
             "       transaction_target_account_id                     target_acct\n" +
             "from account_transactions act\n" +
             "         inner join transaction_type tt on act.transaction_type_id = tt.transaction_type_id\n" +
-            "         inner join users u on act.transaction_initiated_by_user_id = u.user_id;\n",
+            "         inner join users u on act.transaction_initiated_by_external_id = u.external_id\n" +
+            "group by `Transaction Number`;\n",
         name: "view_transactions"
     },
     view_incoming_transfers= {
@@ -153,12 +166,12 @@ const DBViewStatements = [
             "       `Initiated by`,\n" +
             "       `Memo`,\n" +
             "       `Date and Time`,\n" +
-            "       `Transaction Type`,\n" +
+            "       `Type`,\n" +
             "       source_acct               as `from`,\n" +
             "       target_acct               as `to`\n" +
             "from view_transactions\n" +
-            "where `Transaction Type` = '"+transaction_type[transactionTypes.transfer]+"'\n" +
-            "group by `to`;",
+            "where `Type` = 'transfer'\n" +
+            "group by banking_system. view_transactions.`Transaction Number`, `to`;",
         name: "view_incoming_transfers"
     },
     view_outgoing_transfers = {
@@ -170,54 +183,53 @@ const DBViewStatements = [
             "       `Initiated by`,\n" +
             "       `Memo`,\n" +
             "       `Date and Time`,\n" +
-            "       `Transaction Type`,\n" +
+            "       `Type`,\n" +
             "       source_acct               as `from`,\n" +
             "       target_acct               as `to`\n" +
             "from view_transactions\n" +
-            "where `Transaction Type` = '"+transaction_type[transactionTypes.transfer]+"'\n" +
-            "group by `from`;",
+            "where `Type` = 'transfer'\n" +
+            "group by banking_system.view_transactions.`Transaction Number`, `from`;",
         name: "view_outgoing_transfers"
     },
     view_deposits = {
-        statement: "create or replace view view_deposits as\n" +
-            "select `Transaction Number`,\n" +
-            "       `Target Starting Balance` AS `Starting Balance`,\n" +
-            "       `Amount`,\n" +
-            "       `Target Final Balance`    AS `Final Balance`,\n" +
-            "       `Initiated by`,\n" +
-            "       `Memo`,\n" +
-            "       `Date and Time`,\n" +
-            "       `Transaction Type`,\n" +
-            "       source_acct               as `from`,\n" +
-            "       target_acct               as `to`\n" +
-            "from view_transactions\n" +
-            "where source_acct is null\n" +
-            "  AND `Transaction Type` = (select transaction_type.type\n" +
-            "                            from transaction_type\n" +
-            "                            where transaction_type.type = '"+transactionTypes[transactionTypes.deposit]+"'\n" +
-            "                            limit 1)\n" +
-            "group by 'to';",
+        statement: "create or replace definer = root@localhost view banking_system.view_deposits as\n" +
+            "select `banking_system`.`view_transactions`.`Transaction Number`      AS `Transaction Number`,\n" +
+            "       `banking_system`.`view_transactions`.`Target Starting Balance` AS `Starting Balance`,\n" +
+            "       `banking_system`.`view_transactions`.`Amount`                  AS `Amount`,\n" +
+            "       `banking_system`.`view_transactions`.`Target Final Balance`    AS `Final Balance`,\n" +
+            "       `banking_system`.`view_transactions`.`Initiated by`            AS `Initiated by`,\n" +
+            "       `banking_system`.`view_transactions`.`Memo`                    AS `Memo`,\n" +
+            "       `banking_system`.`view_transactions`.`Date and Time`           AS `Date and Time`,\n" +
+            "       `banking_system`.`view_transactions`.`Type`        AS `Type`,\n" +
+            "       `banking_system`.`view_transactions`.`source_acct`             AS `from`,\n" +
+            "       `banking_system`.`view_transactions`.`target_acct`             AS `to`\n" +
+            "from `banking_system`.`view_transactions`\n" +
+            "where ((`banking_system`.`view_transactions`.`source_acct` is null) and\n" +
+            "       (`banking_system`.`view_transactions`.`Type` in (select `banking_system`.`transaction_type`.`type`\n" +
+            "                                                                    from `banking_system`.`transaction_type`\n" +
+            "                                                                    where (`banking_system`.`transaction_type`.`type` = 'deposit'))))\n" +
+            "group by `banking_system`.`view_transactions`.`Transaction Number`, `to`\n" +
+            "order by `banking_system`.`view_transactions`.`Transaction Number` desc;\n",
         name: "view_deposits"
     },
     view_withdrawals = {
         statement: "create or replace view view_withdrawals as\n" +
-            "select `Transaction Number`,\n" +
-            "       `Origin Starting Balance` AS `Starting Balance`,\n" +
-            "       `Amount`,\n" +
-            "       `Origin Final Balance`    AS `Final Balance`,\n" +
-            "       `Initiated by`,\n" +
-            "       `Memo`,\n" +
-            "       `Date and Time`,\n" +
-            "       `Transaction Type`,\n" +
-            "       source_acct               as `from`,\n" +
-            "       target_acct               as `to`\n" +
-            "from view_transactions\n" +
-            "where target_acct is null\n" +
-            "  AND `Transaction Type` = (select transaction_type.type\n" +
-            "                            from transaction_type\n" +
-            "                            where transaction_type.type = '"+transactionTypes[transactionTypes.withdrawal]+"'\n" +
-            "                            limit 1)\n" +
-            "group by 'from';",
+            "select `banking_system`.`view_transactions`.`Transaction Number`      AS `Transaction Number`,\n" +
+            "       `banking_system`.`view_transactions`.`Origin Starting Balance` AS `Starting Balance`,\n" +
+            "       `banking_system`.`view_transactions`.`Amount`                  AS `Amount`,\n" +
+            "       `banking_system`.`view_transactions`.`Origin Final Balance`    AS `Final Balance`,\n" +
+            "       `banking_system`.`view_transactions`.`Initiated by`            AS `Initiated by`,\n" +
+            "       `banking_system`.`view_transactions`.`Memo`                    AS `Memo`,\n" +
+            "       `banking_system`.`view_transactions`.`Date and Time`           AS `Date and Time`,\n" +
+            "       `banking_system`.`view_transactions`.`Type`        AS `Type`,\n" +
+            "       `banking_system`.`view_transactions`.`source_acct`             AS `from`,\n" +
+            "       `banking_system`.`view_transactions`.`target_acct`             AS `to`\n" +
+            "from `banking_system`.`view_transactions`\n" +
+            "where ((`banking_system`.`view_transactions`.`target_acct` is null) and\n" +
+            "       `banking_system`.`view_transactions`.`Type` in (select `banking_system`.`transaction_type`.`type`\n" +
+            "                                                                   from `banking_system`.`transaction_type`\n" +
+            "                                                                   where (`banking_system`.`transaction_type`.`transaction_type_id` = 3)))\n" +
+            "group by `banking_system`.`view_transactions`.`Transaction Number`, `from`;",
         name: "view_withdrawals"
     },
     view_balance = {
@@ -237,6 +249,7 @@ const DBViewStatements = [
         statement: "create or replace view user_info as\n" +
             "select first_name,\n" +
             "       last_name,\n" +
+            "       users.user_id,\n" +
             "       account_id,\n" +
             "       account_cents,\n" +
             "       a.account_type_id,\n" +
@@ -258,60 +271,73 @@ const DBProcedureStatements = [
             "begin\n" +
             "    select `Present Balance`, cents from view_balance where aid = accountNumber;\n" +
             "end;", name: "get_balance"},
-    initiate_transfer= { statement: "create procedure if not exists initiate_transfer(in origin int, in type int, in target int, in initiatedBy int,\n" +
-            "                                                 in memo text,\n" +
-            "                                                 in amount int,\n" +
-            "                                                 in origin_beginningBalance int, in origin_finalBalance int,\n" +
-            "                                                 in target_beginningBalance int, in target_finalBalance int,\n" +
-            "                                                 out transferSuccess bit(1))\n" +
+    initiate_transfer= { statement: "\n" +
+            "create\n" +
+            "    definer = root@localhost procedure if not exists banking_system.initiate_transfer(IN origin int, IN target int,\n" +
+            "                                                                        IN initiatedBy int, IN memo text, IN amount int,\n" +
+            "                                                                        OUT transferSuccess bit)\n" +
             "begin\n" +
             "\n" +
-            "    set transferSuccess = "+sqlBool.true+"; /*assume we will be successful*/\n" +
+            "    set transferSuccess = 1; /*assume we will be successful*/\n" +
             "    if transferSuccess = (select addressable from accounts as a where a.account_id = target) and origin != target then\n" +
             "        start transaction;\n" +
+            "        set @initialOriginBalance = (select accounts.account_cents from accounts where account_id = origin);\n" +
+            "        set @initialTargetBalance = (select accounts.account_cents from accounts where account_id = target);\n" +
+            "        set @finalOriginBalance = @initialOriginBalance - amount;\n" +
+            "        set @finalTargetBalance = @initialTargetBalance + amount;\n" +
             "        insert into account_transactions(transaction_memo, transaction_source_account_id, transaction_target_account_id,\n" +
-            "                                         transaction_initiated_by_user_id, initial_cents_origin, initial_cents_target,\n" +
+            "                                         transaction_initiated_by_external_id, initial_cents_origin, initial_cents_target,\n" +
             "                                         new_cents_origin, new_cents_target, transaction_amount_cents,\n" +
             "                                         transaction_type_id)\n" +
-            "        values (memo, origin, target, initiatedBy, origin_beginningBalance, target_beginningBalance,\n" +
-            "                origin_finalBalance, target_finalBalance, amount, type);\n" +
+            "        values (memo, origin, target, initiatedBy, @initialOriginBalance, @initialTargetBalance,\n" +
+            "                @finalOriginBalance, @finalTargetBalance, amount,"+transactionTypes.transfer+");\n" +
             "        update accounts\n" +
-            "        set account_cents = origin_finalBalance\n" +
+            "        set account_cents = @finalOriginBalance\n" +
             "        where account_id = origin;\n" +
             "        update accounts\n" +
-            "        set account_cents = target_finalBalance\n" +
+            "        set account_cents = @finalTargetBalance\n" +
             "        where account_id = target;\n" +
             "        commit;\n" +
             "    else\n" +
-            "        set transferSuccess = "+sqlBool.false+";\n" +
+            "        set transferSuccess = 0;\n" +
             "    end if;\n" +
-            "end;", name: "initiate_transfer"},
-    initiate_withdrawal= { statement: "create procedure if not exists initiate_withdrawal(in origin int, in type int, in initiatedBy int, in amount int,\n" +
-            "                                                   in beginningBalance int, in finalBalance int)\n" +
+            "end;\n", name: "initiate_transfer"},
+    initiate_withdrawal= { statement: "\n" +
+            "create\n" +
+            "    definer = root@localhost procedure if not exists banking_system.initiate_withdrawal(IN origin int,\n" +
+            "                                                                          IN initiatedBy int, IN amount int)\n" +
             "begin\n" +
+            "    set @beginningBalance = (select accounts.account_cents from accounts where account_id = origin);\n" +
+            "    set @finalBalance = @beginningBalance - amount;\n" +
             "    insert into account_transactions(transaction_source_account_id,\n" +
-            "                                     transaction_initiated_by_user_id, initial_cents_origin,\n" +
+            "                                     transaction_initiated_by_external_id, initial_cents_origin,\n" +
             "                                     new_cents_origin, transaction_amount_cents, transaction_type_id)\n" +
-            "    values (origin, initiatedBy, beginningBalance, finalBalance, amount, type);\n" +
+            "    values (origin, initiatedBy, @beginningBalance, @finalBalance, amount, "+transactionTypes.withdrawal+");\n" +
             "    update accounts\n" +
-            "    set account_cents = finalBalance\n" +
+            "    set account_cents = @finalBalance\n" +
             "    where account_id = origin;\n" +
             "end;", name: "initiate_withdrawal"},
-    initiate_deposit= { statement: "create procedure if not exists initiate_deposit(in destination int, in type int, in initiatedBy int, in amount int,\n" +
-            "                                                in beginningBalance int, in finalBalance int, out depositSuccess bit(1))\n" +
+    initiate_deposit= { statement: "create\n" +
+            "    definer = root@localhost procedure if not exists banking_system.initiate_deposit(IN destination int,\n" +
+            "                                                                       IN initiatedBy int, IN amount int,\n" +
+            "                                                                       out success int)\n" +
             "begin\n" +
-            "    set depositSuccess = "+sqlBool.true+"; /*assume we will be successful*/\n" +
-            "    if depositSuccess = (select addressable from accounts as a where a.account_id = destination) then\n" +
+            "    set @addressable = 1;\n" +
+            "    set success = 1;/*assume we will be successful*/\n" +
+            "    if @addressable = (select addressable from accounts as a where a.account_id = destination) then\n" +
+            "        set @initialTargetBalance =\n" +
+            "                (select accounts.account_cents from accounts where account_id = destination limit 1);\n" +
+            "        set @newBalance = @initialTargetBalance + amount;\n" +
             "        insert into account_transactions(transaction_target_account_id,\n" +
-            "                                         transaction_initiated_by_user_id, initial_cents_target,\n" +
+            "                                         transaction_initiated_by_external_id, initial_cents_target,\n" +
             "                                         transaction_amount_cents,\n" +
             "                                         new_cents_target, transaction_type_id)\n" +
-            "        values (destination, initiatedBy, beginningBalance, amount, finalBalance, type);\n" +
+            "        values (destination, initiatedBy, @initialTargetBalance, amount, @newBalance, "+transactionTypes.deposit+");\n" +
             "        update accounts\n" +
-            "        set account_cents = finalBalance\n" +
+            "        set account_cents = @newBalance\n" +
             "        where account_id = destination;\n" +
             "    else\n" +
-            "        set depositSuccess = "+sqlBool.false+";\n" +
+            "        set success = 0;\n" +
             "    end if;\n" +
             "end;", name: "initiate_deposit"},
     reset_password= { statement: "create procedure if not exists reset_password(in externalID int, in unhashedPassword varchar(255))\n" +
@@ -385,37 +411,50 @@ const DBProcedureStatements = [
             "                    set @salt = (SELECT SUBSTRING(SHA1(RAND()), 1, 6));\n" +
             "                    insert into users(external_id, hashed_password, salt, first_name, last_name, user_role_id)\n" +
             "                    values (externalID, SHA1(CONCAT(unHashedPassword, @salt)), @salt, firstName, lastName, userRoleID);\n" +
+            "                    insert into accounts(account_type_id, user_id)\n" +
+            "                    values(" + accountTypes.savings + ", (select user_id from users where users.external_id = externalID));\n " +
             "                end;", name: "register_user"},
-    check_credentials= { statement: "create procedure if not exists check_credentials(in externalID int, in unHashedPassword varchar(255),\n" +
-            "                                                 out userRoleID int,\n" +
-            "                                                 out credentialsAuthorized bit(1))\n" +
+    check_credentials= { statement: "create\n" +
+            "    definer = root@localhost procedure if not exists banking_system.check_credentials(IN externalID int,\n" +
+            "                                                                        IN unHashedPassword varchar(255),\n" +
+            "                                                                        OUT userRoleID int,\n" +
+            "                                                                        OUT idAuthed int,\n" +
+            "                                                                        out passwordAuthed int)\n" +
             "begin\n" +
+            "    if externalID in (select external_id from users where external_id = externalID) then\n" +
+            "        set idAuthed = 1;\n" +
+            "    else\n" +
+            "        set idAuthed = 0;\n" +
+            "    end if;\n" +
+            "\n" +
             "    if SHA1(CONCAT(unHashedPassword, (select salt from users where external_id = externalID LIMIT 1))) =\n" +
             "       (select (hashed_password) from users where external_id = externalID LIMIT 1) then\n" +
-            "        set credentialsAuthorized = "+sqlBool.true+";\n" +
+            "        set passwordAuthed = 1;\n" +
             "        set userRoleID = (select user_role_id from users where external_id = externalID);\n" +
             "    else\n" +
-            "        set credentialsAuthorized = "+sqlBool.false+";\n" +
+            "        set passwordAuthed = 0;\n" +
             "        set userRoleID = -1;\n" +
             "    end if;\n" +
-            "end;", name: "check_credentials"},
-    view_all_history= { statement: "create procedure if not exists view_all_history(in accountID int)\n" +
+            "end ;", name: "check_credentials"},
+    view_all_history= { statement: "create\n" +
+            "    definer = root@localhost procedure if not exists banking_system.view_all_history(IN accountID int)\n" +
             "begin\n" +
             "    select *\n" +
-            "    from (select *\n" +
-            "          from view_deposits\n" +
-            "          UNION\n" +
-            "          select *\n" +
-            "          from view_withdrawals\n" +
-            "          UNION\n" +
-            "          select *\n" +
-            "          from view_incoming_transfers\n" +
-            "          where `to` = accountID\n" +
-            "          UNION\n" +
-            "          select *\n" +
-            "          from view_outgoing_transfers\n" +
-            "          where `from` = accountID) as unionTbls\n" +
-            "    order by unionTbls.`Transaction Number` desc;\n" +
+            "      from view_deposits\n" +
+            "      where `to` = accountID\n" +
+            "      UNION\n" +
+            "      select *\n" +
+            "      from view_withdrawals\n" +
+            "      where `from` = accountID\n" +
+            "      UNION\n" +
+            "      select *\n" +
+            "      from view_incoming_transfers\n" +
+            "      where `to` = accountID\n" +
+            "      UNION\n" +
+            "      select *\n" +
+            "      from view_outgoing_transfers\n" +
+            "      where `from` = accountID\n" +
+            "  order by `Transaction Number` desc;\n" +
             "end;", name: "view_all_history"},
     get_user_info= { statement: "create procedure if not exists get_user_info(in externalID int)\n" +
             "begin\n" +
@@ -460,35 +499,29 @@ const DBProcedureStatements = [
             "end;", name: "get_user_info_from_name",
     },
     insert_account = {
-        statement: "create procedure if not exists insert_account(in externalID int)\n" +
-                "begin\n" +
+        statement: "CREATE DEFINER=`root`@`localhost` PROCEDURE if not exists `insert_account`(in externalID int)\n" +
+            "begin\n" +
             "    set @accounts_open = (select count(*)\n" +
             "                          from accounts\n" +
             "                                   inner join users u on accounts.user_id = u.user_id\n" +
             "                          where u.external_id = externalID);\n" +
+            "    set @userID = (select user_id from users u\n" +
+            "                          where external_id = externalID);\n" +
             "    if @accounts_open = 0 then\n" +
             "        insert into accounts(account_type_id, user_id)\n" +
-            "        values ("+accountTypes.savings+", (select accounts.user_id\n" +
-            "                                       from accounts\n" +
-            "                                                inner join users u on accounts.user_id = u.user_id\n" +
-            "                                       where u.external_id = externalID\n" +
-            "                                       limit 1));\n" +
+            "        values (1, @userID);\n" +
             "    elseif @accounts_open = 1 then\n" +
             "        insert into accounts(account_type_id, user_id)\n" +
-            "        values ('"+accountTypes.checking+"', (select accounts.user_id\n" +
-            "                                       from accounts\n" +
-            "                                                inner join users u on accounts.user_id = u.user_id\n" +
-            "                                       where u.external_id = externalID\n" +
-            "                                       limit 1));\n" +
+            "        values ('2', @userID);\n" +
             "    end if;\n" +
-            "end;", name: "insert_account"
+            "end", name: "insert_account"
     }
 ];
 
 exports.tables = DBTableStatements;
 exports.views = DBViewStatements;
 exports.procedures = DBProcedureStatements;
-
+exports.accountIndices = accountIndices;
 exports.roles = userRoles;
 exports.accountTypes = accountTypes;
 exports.transactionTypes = transactionTypes;

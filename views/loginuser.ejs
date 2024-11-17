@@ -20,12 +20,10 @@
       return document.getElementById("username").textContent;
     }
     function showEID(event) {return confirm('Your External ID: <%=externalID%>');}
-    function showError(event){return confirm('<%=error%>')}
   </script>
 </head>
 <body
 <%if(externalID !== undefined){%> onload="showEID(event);"<%}%>
-<%if(error !== undefined){%> onload="showError(event);"<%}%>
 >
   <div class="container-fluid vh-100" style="margin-top:10px">
     <div class="" style="margin-top:100px">
@@ -42,20 +40,25 @@
                 </span>
                 <input id="externalID" name="externalID" type="text" <%if(externalID !== undefined){%>value="<%=externalID%>"<%}%> class="form-control" autofocus="autofocus" placeholder="External ID">
               </div>
+              <%if (idAuthed !== "true"){%>
               <div>
                 <p id="message" class="text-danger">
-                  PROBLEM MESSAGE GOES HERE
+                  External ID does not exist.
                 </p>
               </div>
+              <%}%>
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>
                 <input id="password" name="password" type="password" class="form-control" autofocus="autofocus" placeholder="password">
               </div>
+              <%if (passwordAuthed !== "true"){%>
               <div>
                 <p id="message" class="text-danger">
-                  PROBLEM MESSAGE HERE
+                  Invalid Password.
                 </p>
               </div>
+              <%}%>
+
               <input type="hidden" id="page" name="page" value="overview">
               <div class="text-center">
                 <button class="btn btn-primary mt-2" type="submit">
