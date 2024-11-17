@@ -54,9 +54,14 @@ router.get('/', async function(req, res, next) {
 router.post('/', function(req, res, next) {
     console.log(fileName + ".js: POST");
     let f = req.body;
-    if(f.receivingAccount!== undefined && f.sendingAccount !== undefined){
+    if(f.receivingAccount === undefined && f.sendingAccount === undefined){
+        // goto customerasemployee
+    }else if(f.receivingAccount!== undefined && f.sendingAccount === undefined) {
 
-    }
+    }else if(f.receivingAccount === undefined && f.sendingAccount !== undefined){
+
+    }else if(f.receivingAccount !== undefined && f.sendingAccount !== undefined)
+
     let q = querystring.stringify(req.query);
     res.redirect("/"+filename + "?" + q);
 });
