@@ -8,7 +8,7 @@ var transactionTypes = require('../lib/SQL_DDL').transactionTypes;
 class BankUtils {
     /*in externalID int, in unHashedPassword varchar(255), out userRoleID int, out credentialsAuthorized bit(1)
     returns boolean indicating whether the credentials are valid.*/
-
+    static moneyRegex = "^([0-9]*(.[0-9]{2}||.[0-9])?)$"
     //TODO refactor (now returns an int for idAuthed and passwordAuthed as components instead of @credentialsAuthed)
     static async check_credentials(externalID, unHashedPassword) {
         let sql = "call check_credentials(" + externalID + ",'" + unHashedPassword + "', @userRoleID, @idAuthed, @passwordAuthed);";
@@ -58,17 +58,17 @@ class BankUtils {
 
 class User {
     constructor(userInfo) {
-        this.external_id = userInfo[0][0].external_id;
-        this.user_id = userInfo[0][0].user_id;
-        this.user_role_id = userInfo[0][0].user_role_id;
-        this.role = userInfo[0][0].role;
-        this.name = userInfo[0][0].first_name + " " + userInfo[0][0].last_name;
-        for (let i = 0; i < userInfo[0].length; ++i) {
+        this.external_id = userInfo[0].external_id;
+        this.user_id = userInfo[0].user_id;
+        this.user_role_id = userInfo[0].user_role_id;
+        this.role = userInfo[0].role;
+        this.name = userInfo[0].first_name + " " + userInfo[0].last_name;
+        for (let i = 0; i < userInfo.length; ++i) {
             let x = {
-                account_id: userInfo[0][i].account_id,
-                account_type_id: userInfo[0][i].account_type_id,
-                account_type: userInfo[0][i].type,
-                addressable: (userInfo[0][i].addressable[0] === 1)
+                account_id: userInfo[i].account_id,
+                account_type_id: userInfo[i].account_type_id,
+                account_type: userInfo[i].type,
+                addressable: (userInfo[i].addressable[0] === 1)
             }
             this.accounts.push(x)
         }
@@ -76,6 +76,7 @@ class User {
 
     static async create(externalID) {
         let userInfo = await User.get_user_info(externalID);
+        userInfo = userInfo[0];
         return new User(userInfo);
     }
 
@@ -119,6 +120,7 @@ class Admin extends User {
 
     static async create(externalID) {
         let userInfo = await User.get_user_info(externalID);
+        userInfo = userInfo[0];
         return new Admin(userInfo);
     }
 
@@ -175,10 +177,15 @@ class Customer extends User {
     }
 
     static async create(externalID) {
-        let userInfo = await User.get_user_info(externalID);
-        return new Customer(userInfo);
+        return new Promise(async (resolve, reject)=>{
+            let userInfo = await User.get_user_info(externalID);
+            userInfo = userInfo[0];
+            if(userInfo[0].user_role_id !== roles.customer || userInfo[0].user_role_id) {
+                return reject("User is not a customer!");
+            }
+            return resolve(new Customer(userInfo));
+        })
     }
-
 
     initiate_transfer(origin, type, target, memo, amount) {
         let sql = "call initiate_transfer(" + origin + "," + target + "," + this.external_id + ",'" + memo + "'," + amount + ", @out);";
@@ -200,7 +207,7 @@ class Customer extends User {
     }
 
     /*in origin int, in type int, in initiatedBy int, in amount int, in beginningBalance int, in finalBalance int*/
-    async initiate_withdrawal(origin, amount) {
+    async initiate_withdrawal(amount, origin) {
         let sql = "call initiate_withdrawal(" + origin + "," + this.external_id + "," + amount + ");";
         try {
             con.query(sql, function (err, result) {
@@ -406,7 +413,21 @@ class Customer extends User {
     }
 }
 
-class EmployeeAsCustomer extends Customer {
+class Employee extends Customer {
+    userType = 2
+
+    constructor(externalID) {
+        super(externalID);
+    }
+    static async create(externalID) {
+        let userInfo = await User.get_user_info(externalID);
+        userInfo = userInfo[0];
+        return new Employee(userInfo);
+    }
+
+}
+
+class EmployeeAsCustomer extends Employee {
     userType = 2
     initiated_by;
 
@@ -419,6 +440,7 @@ class EmployeeAsCustomer extends Customer {
 
     static async create(externalID) {
         let userInfo = await User.get_user_info(externalID);
+        userInfo = userInfo[0];
         return new EmployeeAsCustomer(userInfo);
     }
 
@@ -443,7 +465,7 @@ class EmployeeAsCustomer extends Customer {
     }
 
     /*in origin int, in type int, in initiatedBy int, in amount int, in beginningBalance int, in finalBalance int*/
-    async initiate_withdrawal(origin, amount) {
+    async initiate_withdrawal(amount, origin) {
         let sql = "call initiate_withdrawal(" + origin + "," + this.initiated_by + "," + amount + ");";
         try {
             con.query(sql, function (err, result) {
@@ -477,18 +499,6 @@ class EmployeeAsCustomer extends Customer {
     }
 }
 
-class Employee extends Customer {
-    userType = 2
-
-    constructor(externalID) {
-        super(externalID);
-    }
-    static async create(externalID) {
-        let userInfo = await User.get_user_info(externalID);
-        return new Employee(userInfo);
-    }
-
-}
 
 exports.Employee = Employee;
 exports.EmployeeAsCustomer = EmployeeAsCustomer;

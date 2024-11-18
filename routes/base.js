@@ -6,17 +6,20 @@ const linq = import('linq');
 var router = express.Router();
 const querystring = require('querystring');
 let fileName = "base";
+
 let USDollar = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
 });
 
+let userObj;
+let query;
+
 /* GET page. */
 router.get('/', async function(req, res, next) {
     console.log(fileName + ".js: GET");
     try{
-        let userObj;
-        let query = req.query;
+        query = req.query;
         if(parseInt(query.role, 10) === roles.customer){
             userObj = await Customer.create(query.externalID);
         }else if (parseInt(query.role, 10) === roles.employee){
@@ -41,8 +44,8 @@ router.get('/', async function(req, res, next) {
         }catch (e){
             x = []
         }
-
-        res.render(fileName , {user: userObj, utils:BankUtils, qs: querystring, history: accountHistory[0], headers : x, maxRows: 15, tableIndex:( (query.tableIndex !== undefined) ? query.tableIndex : 0), usd: USDollar, account_id:userObj.accounts[accountIndices[userObj.currentAccount]].account_id});
+        query = {user: userObj, utils:BankUtils, qs: querystring, history: accountHistory[0], headers : x, maxRows: 15, tableIndex:( (query.tableIndex !== undefined) ? query.tableIndex : 0), usd: USDollar, account_id:userObj.accounts[accountIndices[userObj.currentAccount]].account_id};
+        res.render(fileName , query);
     }catch (e){
         console.log(e);
         console.log(e.message);
@@ -55,15 +58,20 @@ router.post('/', function(req, res, next) {
     console.log(fileName + ".js: POST");
     let f = req.body;
     if(f.receivingAccount === undefined && f.sendingAccount === undefined){
+        // check if the id submitted corresponds to a customer, not an admin or another employee
         // goto customerasemployee
     }else if(f.receivingAccount!== undefined && f.sendingAccount === undefined) {
-
+        // deposit
+        userObj.initiate_deposit(f.amount, userObj.accounts[f.receivingAccount].account_id);
     }else if(f.receivingAccount === undefined && f.sendingAccount !== undefined){
+        // withdrawal
+        userObj.initiate_withdrawal(f.amount, userObj.accounts[f.sendingAccount].account_id);
+    }else if(f.transferMemo !== undefined){
+        //transfer
+    }
 
-    }else if(f.receivingAccount !== undefined && f.sendingAccount !== undefined)
-
-    let q = querystring.stringify(req.query);
-    res.redirect("/"+filename + "?" + q);
+    let q = querystring.stringify({externalID: userObj.external_id, role: userObj.user_role_id, setCurrentAccount: userObj.currentAccount, add: undefined, tableIndex: 0, page: 'overview'});
+    res.redirect("/"+ fileName + "?" + q);
 });
 
 module.exports = router;
