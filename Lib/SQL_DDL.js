@@ -191,6 +191,22 @@ const DBViewStatements = [
             "group by banking_system.view_transactions.`Transaction Number`, `from`;",
         name: "view_outgoing_transfers"
     },
+    view_all_transfers = {statement: "create or replace definer = root@localhost view view_all_transfers as\n" +
+            "select `banking_system`.`view_transactions`.`Transaction Number`      AS `Transaction Number`,\n" +
+            "       `banking_system`.`view_transactions`.`Target Starting Balance` AS `Starting Balance`,\n" +
+            "       `banking_system`.`view_transactions`.`Amount`                  AS `Amount`,\n" +
+            "       `banking_system`.`view_transactions`.`Target Final Balance`    AS `Final Balance`,\n" +
+            "       `banking_system`.`view_transactions`.`Initiated by`            AS `Initiated by`,\n" +
+            "       `banking_system`.`view_transactions`.`Memo`                    AS `Memo`,\n" +
+            "       `banking_system`.`view_transactions`.`Date and Time`           AS `Date and Time`,\n" +
+            "       `banking_system`.`view_transactions`.`Type`                    AS `Type`,\n" +
+            "       `banking_system`.`view_transactions`.`source_acct`             AS `from`,\n" +
+            "       `banking_system`.`view_transactions`.`target_acct`             AS `to`\n" +
+            "from `banking_system`.`view_transactions`\n" +
+            "where (`banking_system`.`view_transactions`.`Type` = 'transfer')\n" +
+            "group by `banking_system`.`view_transactions`.`Transaction Number`;", name: "view_all_transfers"   },
+
+
     view_deposits = {
         statement: "create or replace definer = root@localhost view banking_system.view_deposits as\n" +
             "select `banking_system`.`view_transactions`.`Transaction Number`      AS `Transaction Number`,\n" +
@@ -271,6 +287,18 @@ const DBProcedureStatements = [
             "begin\n" +
             "    select `Present Balance`, cents from view_balance where aid = accountNumber;\n" +
             "end;", name: "get_balance"},
+    get_all_transfers = {
+        statement:"create\n" +
+            "    definer = root@localhost procedure if not exists get_all_transfers(IN userID int)\n" +
+            "begin\n" +
+            "    select *, case\n" +
+            "    when v.`from` in (select account_id from accounts where accounts.user_id = userID) then 'outgoing'\n" +
+            "    when v.`to` in (select account_id from accounts where accounts.user_id = userID) then 'incoming'\n" +
+            "    END as Direction\n" +
+            "    from view_all_transfers as v;\n" +
+            "end;",
+        name: "get_all_transfers"
+    },
     initiate_transfer= { statement: "\n" +
             "create\n" +
             "    definer = root@localhost procedure if not exists banking_system.initiate_transfer(IN origin int, IN target int,\n" +

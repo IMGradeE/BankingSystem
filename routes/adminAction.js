@@ -47,7 +47,7 @@ router.post('/', async function(req, res, next) {
         }
     }catch (e){
         console.log(e);
-        //TODO display an error message
+        //TODO display an error message for a role change failure.
     }
     res.redirect('/adminBase?externalID='+ req.query.adminID);
 });

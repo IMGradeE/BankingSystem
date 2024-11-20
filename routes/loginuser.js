@@ -6,9 +6,7 @@ const querystring = require('querystring');
 
 /* GET page. */
 router.get('/', function(req, res, next) {
-
     console.log("loginuser.js: GET");
-
     res.render('loginuser', {externalID : req.query.externalID, idAuthed: ( req.query.idAuthed !== undefined)? req.query.idAuthed:true, passwordAuthed: ( req.query.passwordAuthed !== undefined)? req.query.passwordAuthed:true });
 });
 
@@ -26,7 +24,7 @@ router.post('/', async function(req, res, next) {
                 res.redirect('/adminBase?externalID=' + query);
                 return;
             }else {
-                res.redirect('/base?externalID=' + external_id + '&role=' + authResults.role+ '&setCurrentAccount=savings');
+                res.redirect('/base?externalID=' + external_id + '&role=' + authResults.role+ '&setCurrentAccount=savings&receiverID=' + external_id);
                 return;
             }
         }else{

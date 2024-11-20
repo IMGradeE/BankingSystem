@@ -53,9 +53,8 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(express.static(path.join(__dirname, "node_modules/bootstrap/dist/")));
+ app.use(express.static(path.join(__dirname, "node_modules/bootstrap/dist/")));
 app.use(express.static(path.join(__dirname, "node_modules/bootstrap-icons/")));
-
 app.use('/', indexRouter);
 app.use('/loginuser', loginUserRouter);
 app.use('/register', registerRouter);

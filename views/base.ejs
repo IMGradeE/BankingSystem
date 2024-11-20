@@ -11,26 +11,22 @@
     <meta name="author" content="LayoutIt!">
 
     <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
 	  <script>
-		  function checkSelect(event){
-			if(event.target.value === "" ){
-				document.getElementById("message").visibility = "visible";
-				return false;
-			}
-			return true;
-		  }
-		  function resetWarning(event){
-			  document.getElementById("message").visibility = "hidden";
+
+		  function enableButton(e){
+			  document.getElementById("postReceiverID").removeAttribute("disabled");
+			  console.log(e);
 		  }
 	  </script>
+
   </head>
   <body>
-
+  <form id = "transferForm" onsubmit="return checkSelect(event)" action="/base/submit" method="post"></form>
+  <form action="/base/transfer" id="receiverForm" method="post"></form>
   <div class="container-fluid vh-100" style="margin-top:10px">
 	  <div class="" style="margin-top:5px">
 		  <div>
-			  <h1 class="text-primary"><ul style="text-underline: cornflowerblue">Banking, Inc.</ul></h1>
+			  <h1 class="text-primary"><ul style="text-underline: cornflowerblue">Banking, Inc. </ul></h1>
 		  </div>
 		  <div class="rounded d-flex justify-content-center">
 			  <div class="col-lg-12 shadow-lg p-5 bg-light">
@@ -39,144 +35,135 @@
 								<div class="row">
 									<div class="col-md-2">
 										<ul class="nav flex-column rounded nav-pills bg-body-secondary">
-											<!--TODO-->
 											<li class="nav-item">
-												<a class="nav-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: 'savings', add: (user.accounts.length === 0)})%>">Savings</a>
+												<a class="nav-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: 'savings', add: (user.accounts.length === 0), receiverID: user.external_id})%>">Savings</a>
 											</li>
 											<li class="nav-item">
-												<a class="nav-link <%if(user.accounts.length < 2){%>link-secondary<%}%> "  href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: 'checking', add: (user.accounts.length === 1)})%>">Checking<%if(user.accounts.length < 2){%> (Add)<%}%></a>
+												<a class="nav-link <%if(user.accounts.length < 2){%>link-secondary<%}%> "  href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: 'checking', add: (user.accounts.length === 1), receiverID: user.external_id})%>">Checking<%if(user.accounts.length < 2){%> (Add)<%}%></a>
 											</li>
 											<li class="nav-item">
-												<a class="nav-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, page:'transfersHist'})%>">Transfers</a>
+												<a class="nav-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, page:'transfers'})%>&receiverID=<%=user.external_id%>">Transfers</a>
 											</li>
-											<ul  class="nav flex-column rounded nav-pills bg-body-secondary">
-												<li class="nav-item">
-													<a href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, page:'transfersHistOUT'})%>">Incoming</a>
-												</li>
-												<li class="nav-item">
-													<a href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, page:'transfersHistIN'})%>">Outgoing</a>
-												</li>
-											</ul>
 											<%if(user.role === "employee"){%>
 												<!--TODO-->
-												<li class="nav-item dropdown ml-md-auto">
-													<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown">Enter Customer Account</a>
-													<div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
-														<a>
-															<form method="post">
-																<input required type="text" class="form-control" name="customerID"  id="customerID" placeholder="Enter customer's ID"><button type="submit" class="btn btn-primary mt-2">Go</button>
-															</form>
-														</a>
-														<a class="dropdown-item" href="#">Transfers</a>
-														<a class="dropdown-item" href="#">Checking</a>
-														<a class="dropdown-item" href="#">Savings</a>
-														<div class="dropdown-divider">
-														</div> <a class="dropdown-item" href="#">Separated link</a>
-													</div>
-												</li>
+												<a>
+													<form id="enterManageMode" method="post" action = "/base/manageUser">
+														<input form="enterManageMode" required type="text" class="form-control" name="customerID"  id="customerID" placeholder="Enter customer's ID"><button form="enterManageMode" type="submit" class="btn btn-primary mt-2">Go</button>
+													</form>
+													<!--TODO add error message-->
+												</a>
+												<%if(user.currentUser !== undefined){%>
+											<a class="nav-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: 'savings', add: (user.accounts.length === 0), receiverID: user.external_id})%>">Savings</a>
+											<a class="nav-link <%if(user.accounts.length < 2){%>link-secondary<%}%> "  href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: 'checking', add: (user.accounts.length === 1), receiverID: user.external_id})%>">Checking<%if(user.accounts.length < 2){%> (Add)<%}%></a>
+											<a class="nav-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, page:'transfers'})%>&receiverID=<%=user.external_id%>">Transfers</a>
+													<a>
+														<form id="exitManageMode" method="post" action = "/base/returnToEmployee">
+															<button form = "exitManageMode" type="submit" class="btn btn-secondary mt-2">Leave</button>
+														</form>
+													</a>
+												<%}%>
 											<%}%>
 										</ul>
 									</div>
 									<div class="col-10 rounded-10 p-0 m-auto">
 										<%
 											let actionHeader;
-										if(user.page === "deposit"){
+										if(u.page === "deposit"){
 											actionHeader = "Deposit"
-										}else if(user.page === "withdrawal"){
+										}else if(u.page === "withdrawal"){
 											actionHeader = "Withdrawal"
-										}else if(user.page === "transfer") {
-											actionHeader = "Transfer"
+										}else if(u.page === "transfers") {
+											actionHeader = "Transfers"
 										}
 										%>
-										<%if(user.page!== "overview"){%>
+										<%if(u.page!== "overview"){%>
 										<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
-											<form method="post" onsubmit="return checkSelect(event)">
-												<h4 style="margin-left: -10px"><%=actionHeader%>></h4>
+											<div>
+												<h4 style="margin-left: -10px"><%=actionHeader%></h4>
 												<div class="mb-3">
+													<%if(u.page === "transfers"){%>
+													<div class="mb-3">
+														<div>
+															<div class="row">
+																<label  for="receiverID" class="form-label text-secondary-emphasis">Receiver's UserID</label>
+																<div class="col-11">
+																	<input required form = "receiverForm"  class="form-control" type="text" id="receiverID" name="receiverID" value='<%=query.receiverID%>' onclick="enableButton(event)">
+																	<input form = "receiverForm"  class="form-control" type="text" id="transferQuery" name="transferQuery" hidden="hidden"value="<%='externalID='+u.externalID+'&role='+u.role+'&setCurrentAccount='+u.setCurrentAccount+'&page='+u.page+'&'%>">
+																</div>
+																<div class="col-1 align-text-top">
+																	<button form = "receiverForm" class="btn btn-secondary" type="submit" id = "postReceiverID" disabled>Submit</button>
+																</div>
+
+																<%if (notAddressableRecipient !== undefined){%>
+																	<div>
+																		<p id="message" class="text-danger">
+																			<%=notAddressableRecipient%>
+																		</p>
+																	</div>
+																<%}%>
+															</div>
+														</div>
+													</div>
+													<div class="mb-3">
+														<label  for="transferMemo" class="form-label text-secondary-emphasis">Memo</label>
+														<textarea required form = "transferForm" class="form-control" type="text" id="transferMemo" name="transferMemo"></textarea>
+													</div>
+													<%}
+													if(u.page === "transfers" || u.page === "withdrawal"){%>
+													<!--withdrawal/TRANSFER-->
+													<label for="sendingAccount" class="form-label text-secondary-emphasis">Sending Account</label>
+													<select required form = "transferForm"  required class="form-select" name="sendingAccount" id="sendingAccount">
+														<!--TODO prevent accounts from being the same-->
+														<%
+														for(let i = 0; i < u.accounts.length; ++i){%>
+															<option value="<%=u.accounts[i].account_id%>"><%=u.accounts[i].account_type%></option>
+														<%}%>
+													<%}
+													if(u.page === "transfers" || u.page === "deposit"){%>
+													</select>
 													<!--DEPOSIT/TRANSFER-->
 													<label for="receivingAccount" class="form-label text-secondary-emphasis">Receiving Account</label>
-													<select required class="form-select" name="receivingAccount" id="receivingAccount">
-														<option selected disabled hidden="hidden">Choose an Account</option>
-														<%for(let i = 0; i < user.accounts.length; ++i){%>
-															<option value="<%=i%>"><%=user.accounts[i].account_type%></option>
+													<select required form = "transferForm" required class="form-select" name="receivingAccount" id="receivingAccount">
+														<%for(let i = 0; i < receivingUser.accounts.length; ++i){%>
+															<option value="<%=receivingUser.accounts[i].account_id%>"><%=receivingUser.accounts[i].account_type%></option>
 														<%}%>
 													</select>
-													<!--WITHDRAW/TRANSFER-->
-													<%if(user.page === "transfer"){%>
-														<div class="mb-3">
-															<label for="transferMemo" class="form-label text-secondary-emphasis">Memo</label>
-															<textarea class="form-control" type="text" id="transferMemo" name="transferMemo"></textarea>
-														</div>
-														<div class="mb-3">
-															<label for="targetUser" class="form-label text-secondary-emphasis">Receiver's UserID</label>
-															<input class="form-control" type="text" id="targetUser" name="targetUser" placeholder="Enter the Receiver's UserID">
-														</div>
 													<%}%>
-													<label for="sendingAccount" class="form-label text-secondary-emphasis">Sending Account</label>
-													<select required class="form-select" name="sendingAccount" id="sendingAccount">
-														<!--TODO auto populate based off of accounts.length-->
-														<option selected disabled hidden="hidden">Choose an Account</option>
-														<%if(user.page === "transfer") {
-															for(let i = 0; i < transferUser.accounts.length; ++i){%>
-															<option value="<%=i%>"><%=user.accounts[i].account_type%></option>
-														<%}
-														}else{%>
-															<%for(let i = 0; i < user.accounts.length; ++i){%>
-																<option value="<%=i%>"><%=user.accounts[i].account_type%></option>
-															<%}%>
-														<%}%>
-													</select>
+
 												</div>
 												<div class="mb-3">
 													<label for="Amount" class="form-label text-secondary-emphasis">Amount</label>
-													<input required class="form-control" type="text" id="Amount" name="amount" pattern="<%=utils.moneyRegex%>">
+													<input  form = "transferForm"  required class="form-control" type="text" id="Amount" name="amount" pattern="<%=utils.moneyRegex%>">
 												</div>
-												<button class="btn btn-primary mt-2" type="submit">Submit</button>
-												<a href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, tableIndex: 0, page: "overview"})%>">
-													<button type="reset" class="btn btn-outline-secondary mt-1 ">Cancel</button>
-													<button type="button" hidden="hidden"></button>
+												<button form="transferForm" class="btn btn-primary mt-2" type="submit">Submit</button>
+												<a href="/base?<%=qs.stringify({externalID: u.external_id, role: u.user_role_id, setCurrentAccount: u.currentAccount, tableIndex: 0, page: "overview"})%>">
+													<button form = "transferForm"  type="reset" class="btn btn-outline-secondary mt-1 ">Cancel</button>
+													<button form = "transferForm"  type="button" hidden="hidden"></button>
 												</a>
 												<hr>
-											</form>
+											</div>
 										</div>
 										<%}%>
-										<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
-
-											<form>
-												<div class="mb-3">
-
-												</div>
-												<div class="mb-3">
-													<label for="receivingAccount" class="form-label text-secondary-emphasis">Receiving Account</label>
-													<input required class="form-control" type="text" id="receivingAccount" name="receivingAccount">
-												</div>
-
-												<div class="mb-3">
-													<label for="Amount" class="form-label">Amount</label>
-													<input required class="form-control" type="text" id="Amount" name="amount" pattern="<%=utils.moneyRegex%>">
-												</div>
-												<button class="btn btn-primary mt-2" type="submit">Submit</button>
-											</form>
-										</div>
-										<%%>
-
-
-											<!--This is the html we render when in an account-->
-											<!--TODO adapt to transfers-->
-											<%if(user.page === "overview" && (user.currentAccount === "savings" || user.currentAccount === "checking")){%>
+										<!--This is the html we render when in an account-->
+										<%if(u.page === "overview" || u.page === "transfers"){%>
 										<div class="row p-0 m-auto bg-opacity-10">
 											<div class = "col-8 pt-2">
+												<%if(u.page !== "transfers"){%>
 												<h3>
-													<%=user.currentAccount.slice(0,1).toUpperCase() + user.currentAccount.slice(1,user.currentAccount.length);%>
+													<%=u.currentAccount.slice(0,1).toUpperCase() + u.currentAccount.slice(1,u.currentAccount.length);%>
 												</h3>
+													<h4>Balance: <%=usd.format(balance)%></h4>
+												<%}else{%>
+													<h3>Transfers</h3>
+												<%}%>
 											</div>
 											<div class = "col-2 align-text-bottom text-sm-end p-0">
-												<a href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, tableIndex: 0, page: 'deposit'})%>">
+												<a href="/base?<%=qs.stringify({externalID: u.external_id, role: u.user_role_id, setCurrentAccount: u.currentAccount, add: undefined, tableIndex: 0, page: 'deposit', receiverID: u.external_id})%>">
 													<button type="button" class="btn btn-outline-secondary mt-1 rounded" >Make a Deposit</button>
 												</a>
 											</div>
 											<div class = "col-2 align-text-bottom text-sm-end p-0">
-												<a href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, tableIndex: 0, page: 'withdrawal'})%>">
+												<a href="/base?<%=qs.stringify({externalID: u.external_id, role: u.user_role_id, setCurrentAccount: u.currentAccount, add: undefined, tableIndex: 0, page: 'withdrawal', receiverID: u.external_id})%>">
 													<button type="button" class="btn btn-outline-secondary mt-1 rounded" >Make a Withdrawal</button>
 												</a>
 											</div>
@@ -187,25 +174,45 @@
 													<!--headers-->
 													<thead class="thead-dark"><tr>
 														<th scope = "col" style="max-width: min-content;">#</th>
+														<%if(u.page === "transfers"){%>
+															<th scope = "col">Account</th>
+														<%}%>
 														<th scope = "col">Type</th>
 														<th scope = "col">Amount</th>
 														<th scope = "col">Initiated By</th>
 														<th scope = "col">Memo</th>
-														<th scope = "col">Final Balance</th>
+														<%if(u.page !== "transfers"){%>
+															<th scope = "col">Final Balance</th>
+														<%}%>
 														<th scope = "col">Date and Time</th>
 													</tr></thead>
 													<tbody>
-													<%let sign; for (let j = 0; j < maxRows && tableIndex < history.length; ++j, ++tableIndex){%>
-													<tr scope="row">
-														<td style="max-width: fit-content;"><%=history[tableIndex]["Transaction Number"]%></td>
-														<td><%=history[tableIndex].Type%></td>
-														<%if(history[tableIndex].from === account_id){sign = '-';}else{sign = ' ';}%>
-														<td><%=sign+usd.format(history[tableIndex].Amount)%></td>
-														<td><%=history[tableIndex]["Initiated by"]%></td>
-														<td><%=history[tableIndex].Memo%></td>
-														<td><%=usd.format(history[tableIndex]['Final Balance'])%></td>
-														<td><%=history[tableIndex]["Date and Time"]%></td>
-													</tr>
+													<%
+														let sign; for (let j = 0; j < maxRows && tableIndex < history.length; ++j, ++tableIndex){
+														if(u.page === "overview"){%>
+															<tr scope="row">
+																<td style="max-width: fit-content;"><%=history[tableIndex]["Transaction Number"]%></td>
+																<td><%=history[tableIndex].Type%></td>
+																<%if(history[tableIndex].from === account_id){sign = '-';}else{sign = ' ';}%>
+																<td><%=sign+usd.format(history[tableIndex].Amount)%></td>
+																<td><%=history[tableIndex]["Initiated by"]%></td>
+																<td><%=history[tableIndex].Memo%></td>
+																<td><%=usd.format(history[tableIndex]['Final Balance'])%></td>
+																<td><%=history[tableIndex]["Date and Time"]%></td>
+															</tr>
+														<%}else{%>
+															<tr scope="row">
+																<%let affectedAccount = (history[tableIndex].Direction === "incoming")? history[tableIndex].to : history[tableIndex].from %>
+																<td style="max-width: fit-content;"><%=history[tableIndex]["Transaction Number"]%></td>
+																<td><%=affectedAccount%></td>
+																<td><%=history[tableIndex].Direction%></td>
+																<%if(history[tableIndex].Direction === "outgoing"){sign = '-';}else{sign = ' ';}%>
+																<td><%=sign+usd.format(history[tableIndex].Amount)%></td>
+																<td><%=history[tableIndex]["Initiated by"]%></td>
+																<td><%=history[tableIndex].Memo%></td>
+																<td><%=history[tableIndex]["Date and Time"]%></td>
+															</tr>
+														<%}%>
 													<%}%>
 													</tbody>
 												</table>
@@ -213,7 +220,7 @@
 											<ul class="pagination">
 											<%for(let k = 0; k <= Math.floor(history.length/maxRows); ++k){%>
 												<li class="page-item">
-													<a class="page-link" href="/base?<%=qs.stringify({externalID: user.external_id, role: user.user_role_id, setCurrentAccount: user.currentAccount, add: undefined, tableIndex: k*maxRows})%>"><%=k+1%></a>
+													<a class="page-link" href="/base?<%=qs.stringify({externalID: u.external_id, role: u.user_role_id, setCurrentAccount: u.currentAccount, add: undefined, tableIndex: k*maxRows})%>"><%=k+1%></a>
 												</li>
 												<%}%>
 											</ul>
