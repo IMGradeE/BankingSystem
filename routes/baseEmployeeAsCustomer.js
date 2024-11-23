@@ -136,6 +136,7 @@ router.post('/submit', async function (req, res, next) {
 
 router.post('/returnToEmployee', async function (req, res, next) {
     req.session.user_object.current_user.current_user = undefined;
+    req.session.receiver_id = req.session.user_object.external_id;
     req.session.save(function (err) {res.redirect('/base')});
 })
 
