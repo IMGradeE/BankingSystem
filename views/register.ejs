@@ -8,22 +8,23 @@
   <title>Bootstrap 5 Login Form Example</title>
   <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
   <link rel="stylesheet" type="text/css" href="font/bootstrap-icons.css" />
-  <script src="./javascripts/selectPlaceholder.js"></script>
+
   <!--TODO add required fields to all forms-->
   <script>
-    /*TODO prevent submission of form with placeholder values in select*/
     function checkPassword(event) {
-      //TODO Delete and replace with regex validation, insert the regex with EJS from NODE side.
-    }
-
-    // TODO move to EJS side
-    function trimInput(event){
-        let s = event.target.getAttribute('value').trim();
-        event.target.value = s;
-    }
-
-    function checkFilled(){
-
+      let newPass = document.getElementById("newPassword");
+      let confirmPass = document.getElementById("confirmPassword");
+      console.log(newPass.value);
+      console.log(confirmPass.value);
+      console.log(newPass.value !== confirmPass.value);
+      if(newPass.value !== confirmPass.value){
+        document.getElementById("message").setAttribute("style", "visibility: visible")
+        newPass.setCustomValidity("Passwords do not match.")
+      }
+      else{
+        document.getElementById("message").setAttribute("style", "visibility: hidden")
+        newPass.setCustomValidity("")
+      }
     }
   </script>
 
@@ -55,17 +56,14 @@
 
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>
-                <input required id="password1" type="password" class="form-control" placeholder="Password">
+                <input required id="newPassword" type="password" class="form-control" placeholder="Password">
               </div>
               <div class="input-group mb-3">
                 <span class="input-group-text bg-primary"><i class="bi bi-key-fill text-white"></i></span>
-                <input required id="password2" name = "pass" type="password" class="form-control" placeholder="Re-enter Password">
+                <input required id="confirmPassword" name = "pass" type="password" class="form-control" placeholder="Re-enter Password" onkeyup="checkPassword(event)">
+                <div class="row"><p id="message" class="text-danger" style="visibility: hidden">Passwords do not match.</p></div>
               </div>
-              <div>
-                <p id="message" class="text-danger" style="height:25px">
-                  PROBLEM MESSAGE HERE
-                </p>
-              </div>
+
               <div class="text-center">
                 <button id="submit" class="btn btn-primary mt-2" type="submit">
                   Create Account

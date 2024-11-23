@@ -2,6 +2,7 @@ const conInfo = require("./connectionInfo");
 const {con} = require("../lib/database");
 const {sqlBool, accountIndices,roles, transactionTypes, accountTypes} = require("./SQL_DDL");
 const querystring = require("querystring");
+const linqjs = require("linqjs");
 // write procedure calls
 //static
 
@@ -9,6 +10,8 @@ class BankUtils {
     /*in externalID int, in unHashedPassword varchar(255), out userRoleID int, out credentialsAuthorized bit(1)
     returns boolean indicating whether the credentials are valid.*/
     static moneyRegex = "^([0-9]*(.[0-9]{2}||.[0-9])?)$"
+
+
     //TODO refactor (now returns an int for idAuthed and passwordAuthed as components instead of @credentialsAuthed)
     static async check_credentials(externalID, unHashedPassword) {
         let sql = "call check_credentials(" + externalID + ",'" + unHashedPassword + "', @userRoleID, @idAuthed, @passwordAuthed);";
@@ -51,17 +54,6 @@ class BankUtils {
         })
     }
 
-    static backToBase(res, userObj) {
-        let q = querystring.stringify({
-            externalID: userObj.external_id,
-            role: userObj.user_role_id,
-            setCurrentAccount: userObj.currentAccount,
-            add: undefined,
-            tableIndex: 0,
-            page: 'overview'
-        });
-        res.redirect("/base?" + q);
-    }
 //TODO function for representing a fractional dollar amount as integer cents.
 
     static async verifyExistsAndNotAdminOrEmp(external_id) {
@@ -82,11 +74,11 @@ class BankUtils {
         return await BankUtils.get_users_array()
             .then((users) => {
                 return users.contains({external_id: parseInt(external_id), user_role_id: roles.customer}, (a, b) => {
-                    console.log(a, b)
                     return (a.external_id === b.external_id);
                 });
             })
             .catch((reason) => {
+                console.log(reason);
                 return false
             });
     }
@@ -107,6 +99,40 @@ class BankUtils {
         return dollars * 100 + cents;
     }
 
+    static async renameMe(session, user, path, res){
+        let usd = new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: 'USD',
+        });
+        session.receiving_user = await Customer.createRecipient(session.receiver_id).then((recipient) => {
+            session.recipient_error = undefined;
+            session.receiver_id = recipient.external_id;
+            return recipient;
+        })
+            .catch((reason) => {
+                session.recipient_error = reason;
+                session.receiver_id = user.external_id;
+                return user
+            });
+        console.log("\n\nFOURTH LOG");
+        console.log(user);
+
+        session.balance = BankUtils.toDollarsFromCents( await user.get_balance(user.current_account.account_id))
+        let accountHistory = await user.view_all_history()
+        let transferHistory = await user.get_all_transfers()
+        let history = (user.page !== "transfers")? accountHistory[0]: transferHistory[0];
+        let opts = {
+            session : session,
+            history,
+            utils: BankUtils,
+            max_rows: (session.max_rows !== undefined)? session.max_rows : 15,
+            table_index: ((session.table_index !== undefined) ? session.table_index : 0),
+            usd: usd,
+            receivingUser: session.receiving_user,
+            notAddressableRecipient: session.recipient_error
+        };
+        await session.save();
+        return opts;
+    }
 
     /*in externalID int, in unHashedPassword varchar(255), in firstName varchar(32),
      in lastName varchar(32), in userRoleID int, out registerSuccess bit(1)*/
@@ -114,39 +140,62 @@ class BankUtils {
 }
 
 class User {
-    currentAccountNumber;
-    constructor(userInfo) {
-        this.external_id = userInfo[0].external_id;
-        this.user_id = userInfo[0].user_id;
-        this.user_role_id = userInfo[0].user_role_id;
-        this.role = userInfo[0].role;
-        this.name = userInfo[0].first_name + " " + userInfo[0].last_name;
-        for (let i = 0; i < userInfo.length; ++i) {
-            let x = {
-                account_id: userInfo[i].account_id,
-                account_type_id: userInfo[i].account_type_id,
-                account_type: userInfo[i].type,
-                addressable: (userInfo[i].addressable[0] === 1)
-            }
-            this.accounts.push(x)
-        }
-        this.page = "overview"
-        this.currentAccountNumber = accountTypes.savings - 1;
-        this.currentAccount = accountTypes[this.currentAccountNumber];
-    }
-
-    static async create(externalID) {
-        let userInfo = await User.get_user_info(externalID);
-        userInfo = userInfo[0];
-        return new User(userInfo);
-    }
-
+    current_account;
     user_id
     external_id;
     name;
     accounts = [];
     user_role_id;
+    page= 'overview'
     role;
+    current_user = null;
+    current_account_view;
+
+    constructor(userInfo, user_to_re_init) {
+        if(userInfo == null){
+            this.current_account = user_to_re_init.current_account;
+            this.current_account_view = user_to_re_init.current_account_view;
+            this.user_id = user_to_re_init.user_id;
+            this.external_id = user_to_re_init.external_id;
+            this.name = user_to_re_init.name;
+            this.accounts = user_to_re_init.accounts;
+            this.user_role_id = user_to_re_init.user_role_id;
+            this.page = user_to_re_init.page;
+            this.role = user_to_re_init.role;
+            this.current_user = user_to_re_init.current_user;
+        }else{
+            this.external_id = userInfo[0].external_id;
+            this.user_id = userInfo[0].user_id;
+            this.user_role_id = userInfo[0].user_role_id;
+            this.role = userInfo[0].role;
+            this.name = userInfo[0].first_name + " " + userInfo[0].last_name;
+            for (let i = 0; i < userInfo.length; ++i) {
+                let x = {
+                    account_id: userInfo[i].account_id,
+                    account_type_id: userInfo[i].account_type_id,
+                    account_type: userInfo[i].type,
+                    addressable: (userInfo[i].addressable[0] === 1)
+                }
+                this.accounts.push(x)
+            }
+            this.current_account = this.accounts[0];
+            this.current_account_view = this.current_account.account_type;
+        }
+    }
+
+    static async create(externalID, user_to_re_init) {
+        return new Promise(async (resolve, reject)=>{
+            if(externalID == null){
+                return resolve(new User(null, user_to_re_init));
+            }
+            let userInfo = await User.get_user_info(externalID);
+            userInfo = userInfo[0];
+            return resolve(new Customer(userInfo));
+
+        })
+    }
+
+
 
     /*in externalID int*/
     static async get_user_info(externalID) {
@@ -230,21 +279,42 @@ class Admin extends User {
 }
 
 class Customer extends User {
-    page;
-    currentAccount;
-
-    constructor(userInfo) {
-        super(userInfo);
+    constructor(userInfo, user_to_re_init) {
+        super(userInfo, user_to_re_init);
+    }
+//TODO move error handling to route so messages can be displayed to user.
+    reset_password(newPassword) {
+        this.#reset_password(newPassword);
+    }
+    //TODO move error handling to route so messages can be displayed to user.
+    #reset_password(newPassword) {
+        let sql = "call reset_password(" + this.external_id + ",'" + newPassword + "');";
+        try {
+            con.query(sql, function (err, result) {
+                if (err) {
+                    console.log(err.message);
+                    throw err;
+                }
+            });
+            console.log("Password reset successfully.");
+            return true;
+        } catch (QueryError) {
+            return false;
+        }
     }
 
-    static async create(externalID) {
+    static async create(externalID, user_to_re_init) {
         return new Promise(async (resolve, reject)=>{
+            if(externalID == null){
+                return resolve(new Customer(null, user_to_re_init));
+            }
             let userInfo = await User.get_user_info(externalID);
             userInfo = userInfo[0];
             if(userInfo[0].user_role_id === roles.admin || userInfo[0].user_role_id === roles.employee) {
                 return reject("User is not a customer!");
             }
-            return resolve(new Customer(userInfo));
+            return resolve(new Customer(userInfo, user_to_re_init));
+
         })
     }
 
@@ -273,7 +343,7 @@ class Customer extends User {
     }
 
     initiate_transfer(origin, target, memo, amount) {
-        let sql = "call initiate_transfer(" + origin + "," + target + "," + this.external_id + ",'" + memo + "'," + amount + ", @out);";
+        let sql = 'call initiate_transfer( '+ origin +' , '+ target +' , '+ this.external_id +' ,"' + memo + '", '+ amount +' , @out);';
         return  new Promise(async (resolve, reject) => {
             con.query(sql, function (err, result) {
                 if (err) {
@@ -283,7 +353,7 @@ class Customer extends User {
             });
             con.query("select @out;", (err, result)=>{
                 if (err) return reject(err);
-                if (result['@out'] === 1) {
+                if (result[0]['@out'] === 1) {
                     return resolve(true);
                 }else return resolve(false);
             })
@@ -293,41 +363,46 @@ class Customer extends User {
 
     /*in origin int, in type int, in initiatedBy int, in amount int, in beginningBalance int, in finalBalance int*/
     async initiate_withdrawal(amount, origin) {
-        let sql = "call initiate_withdrawal(" + origin + "," + this.external_id + "," + amount + ");";
-        try {
+
+        let sql = "call initiate_withdrawal(" + origin + "," + this.external_id + "," + amount + ", @out);";
+        return  new Promise(async (resolve, reject) => {
             con.query(sql, function (err, result) {
                 if (err) {
                     console.log(err.message);
-                    throw err;
+                    return reject(err);
                 }
             });
-            console.log("Withdrawal successful.");
-            return true;
-        } catch (QueryError) {
-            return false;
-        }
+            con.query("select @out;", (err, result)=>{
+                if (err) return reject(err);
+                if (result[0]['@out'] === 1) {
+                    return resolve(true);
+                }else return resolve(false);
+            })
+        })
     }
 
     /*in destination int, in type int, in initiatedBy int, in amount int, in beginningBalance int, in finalBalance int, out depositSuccess bit(1)*/
     async initiate_deposit(amount, destination) {
         let sql = "call initiate_deposit(" + destination + "," + this.external_id + "," + amount + ", @success);";
-        try {
+        return  new Promise(async (resolve, reject) => {
             con.query(sql, function (err, result) {
                 if (err) {
                     console.log(err.message);
-                    throw err;
+                    return reject(err);
                 }
             });
-            console.log("Deposit successful.");
-            return true;
-        } catch (QueryError) {
-            return false;
-        }
+            con.query("select @success;", (err, result)=>{
+                if (err) return reject(err);
+                if (result[0]['@success'] === 1) {
+                    return resolve(true);
+                }else return resolve(false);
+            })
+        })
     }
 
     /*in accountID int*/
-    async view_all_history(accountID) {
-        let sql = "call view_all_history(" + accountID + ");";
+    async view_all_history() {
+        let sql = "call view_all_history(" + this.current_account.account_id + ");";
         return new Promise((resolve, reject) => {
             con.query(sql, function (err, result) {
                 if (err) return reject(err);
@@ -336,45 +411,10 @@ class Customer extends User {
         })
     }
 
-
-    /*in accountID int*/
-    get_deposits(accountID) {
-        let sql = "call get_deposits(" + accountID + ");";
-        try {
-            return con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log("Successfully retrieved deposits.");
-                return result;
-            });
-        } catch (QueryError) {
-            return null;
-        }
-    }
-
-    /*in accountID int*/
-    get_withdrawals(accountID) {
-        let sql = "call get_withdrawals(" + accountID + ");";
-        try {
-            return con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log("Successfully retrieved withdrawals.");
-                return result;
-            });
-        } catch (QueryError) {
-            return null;
-        }
-    }
-
     /*in accountNumber int*/
     async get_balance(accountNumber) {
         let sql = "call get_balance("+accountNumber+")";
-        return await new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             con.query(sql, function (err, result) {
                 if (err) {
                     return reject(err);
@@ -383,74 +423,6 @@ class Customer extends User {
                 return resolve(result[0][0].cents);
             });
         });
-    }
-
-    /*in accountID int, in lower DATETIME, in upper DATETIME*/
-    get_incoming_transfers_date_range(accountID, lower, upper) {
-        let sql = "call get_incoming_transfers_date_range(" + accountID + "," + lower + "," + upper + ");";
-        try {
-            return con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log("Successfully retrieved incoming transfers in date range.");
-                return result;
-            });
-        } catch (QueryError) {
-            return null;
-        }
-    }
-
-    /*in accountID int, in lower DATETIME, in upper DATETIME*/
-    get_outgoing_transfers_date_range(accountID, lower, upper) {
-        let sql = "call get_outgoing_transfers_date_range(" + accountID + "," + lower + "," + upper + ");";
-        try {
-            return con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log("Successfully retrieved outgoing transfers in date range.");
-                return result;
-            });
-        } catch (QueryError) {
-            return null;
-        }
-    }
-
-    /*in accountID int, in lower DATETIME, in upper DATETIME*/
-    get_deposits_date_range(accountID, lower, upper) {
-        let sql = "call get_deposits_date_range(" + accountID + "," + lower + "," + upper + ");";
-        try {
-            return con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log("Successfully retrieved deposits in date range.");
-                return result;
-            });
-        } catch (QueryError) {
-            return null;
-        }
-    }
-
-    /*in accountID int, in lower DATETIME, in upper DATETIME*/
-    get_withdrawals_date_range(accountID, lower, upper) {
-        let sql = "call get_withdrawals_date_range(" + accountID + "," + lower + "," + upper + ");";
-        try {
-            return con.query(sql, function (err, result) {
-                if (err) {
-                    console.log(err.message);
-                    throw err;
-                }
-                console.log("Successfully retrieved withdrawals in date range.");
-                return result;
-            });
-        } catch (QueryError) {
-            return null;
-        }
     }
 
     insert_account() {
@@ -466,23 +438,27 @@ class Customer extends User {
 }
 
 class Employee extends Customer {
-    userType = 2
-    currentUser;
-    constructor(externalID) {
-        super(externalID);
-    }
-    static async create(externalID) {
-        let userInfo = await User.get_user_info(externalID);
-        userInfo = userInfo[0];
-        return new Employee(userInfo);
+
+    constructor(userInfo, user_to_re_init) {
+        super(userInfo, user_to_re_init);
     }
 
+
+    static async create(externalID, user_to_re_init) {
+        return new Promise(async (resolve, reject)=>{
+            if(externalID == null){
+                return resolve(new Employee(null, user_to_re_init));
+            }
+            let userInfo = await User.get_user_info(externalID);
+            userInfo = userInfo[0];
+            return resolve(new Employee(userInfo));
+        })
+    }
 }
 
 
 
 exports.Employee = Employee;
-
 exports.Customer = Customer;
 exports.User = User;
 exports.Admin = Admin;

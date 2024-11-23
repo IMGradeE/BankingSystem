@@ -1,86 +1,56 @@
-const mysql = require('mysql2');
-var express = require('express');
+const express = require('express');
 const {Employee, Customer, BankUtils} = require("../Lib/interfaceClasses");
 const {roles, accountIndices} = require("../Lib/SQL_DDL");
-var router = express.Router();
-const querystring = require('querystring');
-const {shallowCopy} = require("ejs/lib/utils");
-require("linqjs");
+const router = express.Router();
 let fileName = "base";
 
-let usd = new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-});
 
-let userObj;
-let query;
-let receivingUser;
-let recipientError;
-let currentUser;
-let receiverID;
 
+router.get('/init', async (req, res) => {
+   try {
+       try {
+       if (req.session.user_role_id === roles.customer) {
+           req.session.user_object = await Customer.create(req.session.external_id);
+       } else if (req.session.user_role_id === roles.employee) {
+           req.session.user_object = await Employee.create(req.session.external_id);
+       }
+       } catch (e) {
+           console.log(e);
+           console.log(e.message);
+       }
+       req.session.receiver_id = (await BankUtils.verifyExists(req.session.receiver_id)) ? req.session.receiver_id : req.session.user_object.external_id;
+       req.session.save(function (err) {res.redirect('/base');});
+
+   } catch (e) {
+       console.log(e);
+       console.log(e.message);
+       res.redirect('/error');
+   }
+})
 
 /* GET page. */
 router.get('/', async function (req, res, next) {
     console.log(fileName + ".js: GET");
-    query = req.query;
+
     try {
-        if (parseInt(query.role, 10) === roles.customer) {
-            userObj = await Customer.create(query.externalID);
-        } else if (parseInt(query.role, 10) === roles.employee) {
-            userObj = await Employee.create(query.externalID);
-            userObj.currentUser = currentUser;
-        }
-    } catch (e) {
-        console.log(e);
-        console.log(e.message);
-        res.redirect('/error');
-    }
-    try {
-        //always a customer object, verify the user exists.
-        query.receiverID = (await BankUtils.verifyExists(query.receiverID)) ? query.receiverID : userObj.external_id;
-        receivingUser = await Customer.createRecipient(query.receiverID).then((user) => {
-            recipientError = undefined;
-            query.receiverID = user.external_id;
-            return user;
+       let opts = await new Promise(async (resolve, reject) => {
+
+            try {
+                if (req.session.user_role_id === roles.customer) {
+                    req.session.user_object = await new Customer(null, req.session.user_object);
+
+                } else if (req.session.user_role_id === roles.employee) {
+                    req.session.user_object = await new Employee(null, req.session.user_object);
+                }
+            } catch (e) {
+                console.log(e);
+                console.log(e.message);
+            }
+
+            req.session.receiver_id = await (BankUtils.verifyExists(req.session.receiver_id)) ? req.session.receiver_id : req.session.user_object.external_id;
+
+            return resolve(await BankUtils.renameMe(req.session, req.session.user_object));
         })
-            .catch((reason) => {
-                recipientError = reason;
-                query.receiverID = userObj.external_id;
-                return userObj
-            });
-        if (query.add === "true") {
-            await userObj.insert_account(userObj.external_id);
-            // reinitialize object since accounts[] is now stale
-            userObj = (userObj instanceof (Employee)) ? await Employee.create(userObj.external_id) : await Customer.create(userObj.external_id);
-        }
-        let u = (userObj.currentUser === undefined)? userObj : userObj.currentUser;
-
-        u.currentAccount = (query.setCurrentAccount !== undefined && query.setCurrentAccount !== "undefined") ? query.setCurrentAccount : u.currentAccount;
-        u.currentAccountNumber = accountIndices[u.currentAccount];
-        u.page = (query.page !== undefined) ? query.page : "overview";
-
-        balance = BankUtils.toDollarsFromCents( await u.get_balance(u.accounts[u.currentAccountNumber].account_id))
-        let accountHistory, transferHistory;
-        let account_id = u.accounts[u.currentAccountNumber].account_id; /*TODO problem here idk*/
-        accountHistory = await u.view_all_history(u.accounts[u.currentAccountNumber].account_id)
-        transferHistory = await u.get_all_transfers()
-        let history = (u.page !== "transfers")? accountHistory[0]: transferHistory[0];
-
-        opts = {
-            user: userObj,
-            u,
-            history,
-            utils: BankUtils,
-            qs: querystring,
-            query,
-            account_id,
-            maxRows: 15,
-            tableIndex: ((query.tableIndex !== undefined) ? query.tableIndex : 0),
-            usd: usd,
-            receivingUser,
-            notAddressableRecipient: recipientError
-        };
         res.render(fileName, opts);
     } catch (e) {
         console.log(e);
@@ -89,36 +59,166 @@ router.get('/', async function (req, res, next) {
     }
 });
 
-router.post('/manageUser', async function (req, res, next) {
+router.get("/savings", async (req, res) => {
+    req.session.user_object.current_account = req.session.user_object.accounts[0];
+    req.session.user_object.page = "overview";
 
-    if (await BankUtils.verifyExistsAndNotAdminOrEmp(req.body.customerID)) {
-        userObj.currentUser = await Customer.create(req.body.customerID);
-        userObj.currentUser.role = roles.employee;
-        currentUser = userObj.currentUser;
-    }
-    BankUtils.backToBase(res, userObj);
+    console.log(req.session.user_object);
+    await req.session.save(function (err) {res.redirect('/base')});
 })
 
+router.get("/checking", async (req, res) => {
+    try {
+        if (req.session.user_role_id === roles.customer) {
+            req.session.user_object = await new Customer(null, req.session.user_object);
+
+        } else if (req.session.user_role_id === roles.employee) {
+            req.session.user_object = await new Employee(null, req.session.user_object);
+        }
+    } catch (e) {
+        console.log(e);
+        console.log(e.message);
+    }
+    if (req.session.user_object.accounts.length == 1) {
+        await req.session.user_object.insert_account(req.session.user_object.external_id);
+        // reinitialize object since accounts[] is now stale
+        req.session.user_object = (req.session.user_object instanceof (Employee)) ? await Employee.create(req.session.user_object.external_id) : await Customer.create(req.session.user_object.external_id);
+    }
+    req.session.user_object.current_account = req.session.user_object.accounts[1];
+    req.session.user_object.page = "overview";
+
+    console.log(req.session.user_object);
+    await req.session.save(function (err) {res.redirect('/base')});
+})
+
+router.get("/transfers", async (req, res) => {
+    req.session.user_object.page = "transfers";
+    console.log('clicked transfers href');
+    await req.session.save(function (err) {res.redirect('/base')});
+
+})
+
+
+router.post('/reset_password', async function (req, res, next) {
+    try {
+        req.session.user_object = await new Customer(null, req.session.user_object);
+    } catch (e) {
+        console.log(e);
+        console.log(e.message);
+    }
+    let result = await BankUtils.check_credentials( req.session.user_object.external_id, req.body.oldPassword).then((authResult) => {
+        if(authResult.idAuthed && authResult.passwordAuthed){
+            req.session.user_object.reset_password(req.body.newPassword);
+            return undefined;
+        }
+    }).catch((reason) => {return reason})
+
+    if (result === undefined) {
+        req.session.message = "true"
+        req.session.save(function (err) {res.redirect('/base')});
+
+    }else{
+        req.session.message = "false"
+        req.session.save(function (err) {res.redirect('/base')});
+
+    }
+})
+
+
+router.get("/withdrawal", (req, res) => {
+    console.log('clicked withdrawal href');
+    req.session.table_index = 0;
+    req.session.user_object.page =  'withdrawal';
+    req.session.receiver_id =  req.session.user_object.external_id;
+    req.session.save(function (err) {res.redirect('/base')});
+
+})
+
+router.get("/deposit", (req, res) => {
+    console.log('clicked deposit href');
+    req.session.table_index = 0;
+    req.session.user_object.page = 'deposit';
+    // reset this just in case
+    req.session.receiver_id = req.session.user_object.external_id;
+    req.session.save(function (err) {res.redirect('/base')});
+
+})
+
+router.get('/pagination', async (req, res) => {
+    console.log('clicked a pagination href');
+    req.session.table_index = parseInt(req.query.index);
+    req.session.save(function (err) {res.redirect('/base')});
+
+})
+
+/*POST ROUTES*/
+
+router.post('/manageUser', async function (req, res, next) {
+
+    if (await BankUtils.verifyExistsAndNotAdminOrEmp(req.body.customer_id)) {
+        req.session.user_object.current_user = await Customer.create(req.body.customer_id);
+        req.session.receiver_id = req.session.user_object.current_user.external_id;
+        req.session.user_object.current_user.user_role_id = roles.employee;
+        req.session.message = "true"
+        req.session.save(function (err) {res.redirect('/baseEmployeeAsCustomer')});
+
+    }else
+    {
+        req.session.message = "false"
+        req.session.save(function (err) {res.redirect('/base')});
+
+    }
+
+})
+
+
 /* POST page. */
-router.post('/submit', function (req, res, next) {
+router.post('/submit', async function (req, res, next) {
     console.log(fileName + ".js: POST");
     let f = req.body;
-    /*TODO catch null amounts*/
-    if (userObj.page === "transfers") {
-        // not worried about whether someone wants to transfer money out of and back into the same account.
-        userObj.initiate_transfer(f.sendingAccount, f.receivingAccount, f.transferMemo, BankUtils.toCentsFromDollars(f.amount))
-    } else if (userObj.page === "deposit") {
-        //call deposit
-        userObj.initiate_deposit(BankUtils.toCentsFromDollars(f.amount), f.receivingAccount);
-    } else if (userObj.page === "withdrawal") {
-        // withdrawal
-        userObj.initiate_withdrawal(BankUtils.toCentsFromDollars(f.amount), f.sendingAccount);
+    try {
+        if (req.session.user_role_id === roles.customer) {
+            req.session.user_object = await new Customer(null, req.session.user_object);
+
+        } else if (req.session.user_role_id === roles.employee) {
+            req.session.user_object = await new Employee(null, req.session.user_object);
+        }
+    } catch (e) {
+        console.log(e);
+        console.log(e.message);
     }
-    BankUtils.backToBase(res, userObj);
+
+    /*TODO catch null amounts*/
+    let x;
+    if (req.session.user_object.page === "transfers") {
+        // not worried about whether someone wants to transfer money out of and back into the same account.
+        x = await req.session.user_object.initiate_transfer(f.sendingAccount, f.receivingAccount, f.transferMemo, BankUtils.toCentsFromDollars(f.amount))
+        req.session.message = x.toString();
+    } else if (req.session.user_object.page === "deposit") {
+        //call deposit
+        x = await req.session.user_object.initiate_deposit(BankUtils.toCentsFromDollars(f.amount), f.receivingAccount);
+        req.session.message = x.toString();
+    } else if (req.session.user_object.page === "withdrawal") {
+        // withdrawal
+        x = await req.session.user_object.initiate_withdrawal(BankUtils.toCentsFromDollars(f.amount), f.sendingAccount);
+        req.session.message = x.toString();
+    }
+    req.session.save(function (err) {res.redirect('/base')});
 });
 
 router.post('/transfer', function (req, res, next) {
-    res.redirect('/base?' + req.body.transferQuery + "receiverID=" + req.body.receiverID);
+    req.session.receiver_id = req.body.receiverID;
+    req.session.save(function (err) {res.redirect('/base')});
+})
+
+router.get('/password', function (req, res, next) {
+    req.session.user_object.page = 'password';
+    req.session.save(function (err) {res.redirect('/base')});
+})
+
+router.get('/logout', function (req, res, next) {
+    res.redirect('/loginuser');
+
 })
 
 module.exports = router;

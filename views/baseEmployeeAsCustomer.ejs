@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Base Post-login page</title>
+    <title>base Post-login page</title>
 
     <meta name="description" content="Source code generated using layoutit.com">
     <meta name="author" content="LayoutIt!">
@@ -20,10 +20,10 @@
 	  </script>
 
   </head>
-  <body <%if(session.echo_external_id !== undefined){%>onload="return confirm('Your External ID is: <%=session.external_id%>')"<%session.echo_external_id = undefined;}%>>
-  <form id = "transferForm" onsubmit="return checkSelect(event)" action="/base/submit" method="post"></form>
-  <form id = "passwordForm" action="/base/reset_password" method="post"></form>
-  <form action="/base/transfer" id="receiverForm" method="post"></form>
+  <body>
+  <form id = "transferForm" onsubmit="return checkSelect(event)" action="/baseEmployeeAsCustomer/submit" method="post"></form>
+  <form id = "passwordForm" action="/baseEmployeeAsCustomer/reset_password" method="post"></form>
+  <form action="/baseEmployeeAsCustomer/transfer" id="receiverForm" method="post"></form>
   <div class="container-fluid vh-100" style="margin-top:10px">
 	  <div class="" style="margin-top:5px">
 		  <div>
@@ -39,31 +39,19 @@
 
 											<li class="nav-item">
 
-												<a class="nav-link" href="/base/savings">Savings</a>
+												<a class="nav-link" href="/baseEmployeeAsCustomer/savings">Savings</a>
 											</li>
 											<li class="nav-item">
-												<a class="nav-link <%if(session.user_object.accounts.length < 2){%>link-secondary<%}%> "  href="/base/checking">Checking<%if(session.user_object.accounts.length < 2){%> (Add)<%}%></a>
+												<a class="nav-link <%if(session.user_object.current_user.accounts.length < 2){%>link-secondary<%}%> "  href="/baseEmployeeAsCustomer/checking">Checking<%if(session.user_object.current_user.accounts.length < 2){%> (Add)<%}%></a>
 											</li>
 											<li class="nav-item">
-												<a class="nav-link" href="/base/transfers">Transfers</a>
+												<a class="nav-link" href="/baseEmployeeAsCustomer/transfers">Transfers</a>
 											</li>
-
-											<%if(session.user_object.role === "customer"){%>
-												<a class="nav-link" href="/base/password">Reset Password</a>
-											<%}%>
-											<%if(session.user_object.role === "employee" ){%>
-												<a>
-													<form id="enterManageMode" method="post" action = "/base/manageUser">
-														<input form="enterManageMode" required type="text" class="form-control" name="customer_id"  id="customer_id" placeholder="Enter customer's ID"><button form="enterManageMode" type="submit" class="btn btn-primary mt-2">Go</button>
-													</form>
-													<!--TODO add error message-->
-												</a>
-											<%}%>
-											<div class="row">
-												<a href = "/base/logout">
-													<button type="button" class="btn btn-secondary mt-2">Logout</button>
-												</a>
-											</div>
+											<a>
+												<form id="exitManageMode" method="post" action = "/baseEmployeeAsCustomer/returnToEmployee">
+													<button form = "exitManageMode" type="submit" class="btn btn-secondary mt-2">Leave</button>
+												</form>
+											</a>
 										</ul>
 									</div>
 									<div class="col-10 rounded-10 p-0 m-auto">
@@ -82,22 +70,22 @@
 										<%}%>
 										<%
 											let actionHeader;
-										if(session.user_object.page === "deposit"){
+										if(session.user_object.current_user.page === "deposit"){
 											actionHeader = "Deposit"
-										}else if(session.user_object.page === "withdrawal"){
+										}else if(session.user_object.current_user.page === "withdrawal"){
 											actionHeader = "Withdrawal"
-										}else if(session.user_object.page === "transfers") {
+										}else if(session.user_object.current_user.page === "transfers") {
 											actionHeader = "Transfers"
-										}else if(session.user_object.page === "password"){
+										}else if(session.user_object.current_user.page === "password"){
 											actionHeader === "Reset Password"
 										}
 										%>
-										<%if(session.user_object.page !== "overview" && session.user_object.page !== "password"){%>
+										<%if(session.user_object.current_user.page!== "overview"){%>
 										<div class="row rounded-10" style="margin: 10px 10px 10px 10px">
 											<div>
 												<h4 style="margin-left: -10px"><%=actionHeader%></h4>
 												<div class="mb-3">
-													<%if(session.user_object.page === "transfers"){%>
+													<%if(session.user_object.current_user.page === "transfers"){%>
 													<div class="mb-3">
 														<div>
 															<div class="row">
@@ -124,18 +112,17 @@
 														<textarea required form = "transferForm" class="form-control" type="text" id="transferMemo" name="transferMemo"></textarea>
 													</div>
 													<%}
-													if(session.user_object.page === "transfers" || session.user_object.page === "withdrawal"){%>
-
+													if(session.user_object.current_user.page === "transfers" || session.user_object.current_user.page === "withdrawal"){%>
 													<!--withdrawal/TRANSFER-->
 													<label for="sendingAccount" class="form-label text-secondary-emphasis">Sending Account</label>
 													<select required form = "transferForm"  required class="form-select" name="sendingAccount" id="sendingAccount">
 														<!--TODO prevent accounts from being the same-->
 														<%
-														for(let i = 0; i < session.user_object.accounts.length; ++i){%>
-															<option value="<%=session.user_object.accounts[i].account_id%>"><%=session.user_object.accounts[i].account_type%></option>
+														for(let i = 0; i < session.user_object.current_user.accounts.length; ++i){%>
+															<option value="<%=session.user_object.current_user.accounts[i].account_id%>"><%=session.user_object.current_user.accounts[i].account_type%></option>
 														<%}%>
 													<%}
-													if(session.user_object.page === "transfers" || session.user_object.page === "deposit"){%>
+													if(session.user_object.current_user.page === "transfers" || session.user_object.current_user.page === "deposit"){%>
 													</select>
 													<!--DEPOSIT/TRANSFER-->
 													<label for="receivingAccount" class="form-label text-secondary-emphasis">Receiving Account</label>
@@ -157,7 +144,7 @@
 											</div>
 										</div>
 										<%}
-										if(session.user_object.role ==="customer" && session.user_object.page ==="password"){%>
+										if(session.user_object.role ==="customer" && session.user_object.current_user.page ==="password"){%>
 											<div class="mb-3">
 												<label for="oldPassword" class="form-label">Old Password</label>
 												<input form="passwordForm" required class="form-control" style="margin-left: 5px;" type="password" id="oldPassword" name="oldPassword">
@@ -168,13 +155,13 @@
 											</div>
 											<button form="passwordForm" class="btn btn-primary mt-2" type="submit">Submit</button>
 
-										<%}else if(session.user_object.page === "overview" || session.user_object.page === "transfers"){%>
+										<%}else if(session.user_object.current_user.page === "overview" || session.user_object.current_user.page === "transfers"){%>
 										<!--This is the html we render when in an account-->
 										<div class="row p-0 m-auto bg-opacity-10">
 											<div class = "col-8 pt-2">
-												<%if(session.user_object.page !== "transfers"){%>
+												<%if(session.user_object.current_user.page !== "transfers"){%>
 												<h3>
-													<%=session.user_object.current_account.account_type.slice(0,1).toUpperCase() + session.user_object.current_account.account_type.slice(1, session.user_object.current_account.account_type.length);%>
+													<%=session.user_object.current_user.current_account.account_type.slice(0,1).toUpperCase() + session.user_object.current_user.current_account.account_type.slice(1,session.user_object.current_user.page.length);%>
 												</h3>
 													<h4>Balance: <%=usd.format(session.balance)%></h4>
 												<%}else{%>
@@ -182,13 +169,13 @@
 												<%}%>
 											</div>
 											<div class = "col-2 align-text-bottom text-sm-end p-0">
-												<a href="/base/deposit">
+												<a href="/baseEmployeeAsCustomer/deposit">
 													<button type="button" class="btn btn-outline-secondary mt-1 rounded" >Make a Deposit</button>
 												</a>
 											</div>
 											<div class = "col-2 align-text-bottom text-sm-end p-0">
 
-												<a href="/base/withdrawal">
+												<a href="/baseEmployeeAsCustomer/withdrawal">
 													<button type="button" class="btn btn-outline-secondary mt-1 rounded" >Make a Withdrawal</button>
 												</a>
 											</div>
@@ -199,14 +186,14 @@
 													<!--headers-->
 													<thead class="thead-dark"><tr>
 														<th scope = "col" style="max-width: min-content;">#</th>
-														<%if(session.user_object.page === "transfers"){%>
+														<%if(session.user_object.current_user.page === "transfers"){%>
 															<th scope = "col">Account</th>
 														<%}%>
 														<th scope = "col">Type</th>
 														<th scope = "col">Amount</th>
 														<th scope = "col">Initiated By</th>
 														<th scope = "col">Memo</th>
-														<%if(session.user_object.page !== "transfers"){%>
+														<%if(session.user_object.current_user.page !== "transfers"){%>
 															<th scope = "col">Final Balance</th>
 														<%}%>
 														<th scope = "col">Date and Time</th>
@@ -214,11 +201,11 @@
 													<tbody>
 													<%
 														let sign; for (let j = 0; j < max_rows && table_index < history.length; ++j, ++table_index){
-														if(session.user_object.page === "overview"){%>
+														if(session.user_object.current_user.page === "overview"){%>
 															<tr scope="row">
 																<td style="max-width: fit-content;"><%=history[table_index]["Transaction Number"]%></td>
 																<td><%=history[table_index].Type%></td>
-																<%if(history[table_index].from === session.user_object.current_account.account_id){sign = '-';}else{sign = ' ';}%>
+																<%if(history[table_index].from === session.user_object.current_user.current_account.account_id){sign = '-';}else{sign = ' ';}%>
 																<td><%=sign+usd.format(history[table_index].Amount)%></td>
 																<td><%=history[table_index]["Initiated by"]%></td>
 																<td><%=history[table_index].Memo%></td>
@@ -245,7 +232,7 @@
 											<ul class="pagination">
 											<%for(let k = 0; k <= Math.floor(history.length/max_rows); ++k){%>
 												<li class="page-item">
-													<a class="page-link" href="/base/pagination?index=<%=k*max_rows%>>"><%=k+1%></a>
+													<a class="page-link" href="/baseEmployeeAsCustomer/pagination?index=<%=k*max_rows%>>"><%=k+1%></a>
 												</li>
 												<%}%>
 											</ul>
@@ -272,8 +259,8 @@
 				</div>
 			</div>
   </div>
-    <script src="js/jquery.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/scripts.js"></script>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/scripts.js"></script>
   </body>
 </html>

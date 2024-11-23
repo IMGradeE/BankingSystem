@@ -295,7 +295,9 @@ const DBProcedureStatements = [
             "    when v.`from` in (select account_id from accounts where accounts.user_id = userID) then 'outgoing'\n" +
             "    when v.`to` in (select account_id from accounts where accounts.user_id = userID) then 'incoming'\n" +
             "    END as Direction\n" +
-            "    from view_all_transfers as v;\n" +
+            "    from view_all_transfers as v\n" +
+            "    where v.`from` in (select account_id from accounts where accounts.user_id = userID) or v.`to` in (select account_id from accounts where accounts.user_id = userID)\n" +
+            "order by v.`Date and Time` DESC;\n" +
             "end;",
         name: "get_all_transfers"
     },
@@ -330,20 +332,20 @@ const DBProcedureStatements = [
             "        set transferSuccess = 0;\n" +
             "    end if;\n" +
             "end;\n", name: "initiate_transfer"},
-    initiate_withdrawal= { statement: "\n" +
-            "create\n" +
-            "    definer = root@localhost procedure if not exists banking_system.initiate_withdrawal(IN origin int,\n" +
-            "                                                                          IN initiatedBy int, IN amount int)\n" +
+    initiate_withdrawal= { statement: "create\n" +
+            "    definer = root@localhost procedure if not exists initiate_withdrawal(IN origin int, IN initiatedBy int, IN amount int, out res int)\n" +
             "begin\n" +
+            "    set res = 0;\n" +
             "    set @beginningBalance = (select accounts.account_cents from accounts where account_id = origin);\n" +
             "    set @finalBalance = @beginningBalance - amount;\n" +
             "    insert into account_transactions(transaction_source_account_id,\n" +
             "                                     transaction_initiated_by_external_id, initial_cents_origin,\n" +
             "                                     new_cents_origin, transaction_amount_cents, transaction_type_id)\n" +
-            "    values (origin, initiatedBy, @beginningBalance, @finalBalance, amount, "+transactionTypes.withdrawal+");\n" +
+            "    values (origin, initiatedBy, @beginningBalance, @finalBalance, amount, 3);\n" +
             "    update accounts\n" +
             "    set account_cents = @finalBalance\n" +
             "    where account_id = origin;\n" +
+            "    set res = 1;\n" +
             "end;", name: "initiate_withdrawal"},
     initiate_deposit= { statement: "create\n" +
             "    definer = root@localhost procedure if not exists banking_system.initiate_deposit(IN destination int,\n" +

@@ -3,7 +3,7 @@
      path = require('path'),
      cookieParser = require('cookie-parser'),
      logger = require('morgan'),
-     indexRouter = require('./routes/index'),
+     employeeAsCustomerRouter = require('./routes/baseEmployeeAsCustomer');
      loginUserRouter = require('./routes/loginuser'),
      baseRouter = require('./routes/base'),
      adminActionRouter = require('./routes/adminAction'),
@@ -53,15 +53,15 @@ app.use(function(req, res, next) {
   next();
 });
 
- app.use(express.static(path.join(__dirname, "node_modules/bootstrap/dist/")));
+app.use(express.static(path.join(__dirname, "node_modules/bootstrap/dist/")));
 app.use(express.static(path.join(__dirname, "node_modules/bootstrap-icons/")));
-app.use('/', indexRouter);
 app.use('/loginuser', loginUserRouter);
 app.use('/register', registerRouter);
 app.use('/adminBase', adminBaseRouter);
 app.use('/adminAction', adminActionRouter);
 app.use('/baseTransactions', baseTransactions);
 app.use('/base', baseRouter);
+app.use('/baseEmployeeAsCustomer', employeeAsCustomerRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

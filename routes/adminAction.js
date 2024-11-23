@@ -5,6 +5,7 @@ const {User, Admin} = require('../Lib/interfaceClasses');
 const {roles} = require("../Lib/SQL_DDL");
 let con = require('../Lib/database').conreg;
 let fileName = "adminAction";
+
 let admin;
 let target;
 
@@ -30,26 +31,34 @@ router.get('/', async function (req, res, next) {
 });
 
 /* POST page. */
-router.post('/', async function(req, res, next) {
+router.post('/role', async function(req, res, next) {
     console.log(fileName + ".js: POST");
     //TODO action
     try{
-        if (req.query.adminAction === "password") {
-            admin.reset_password(target.external_id, req.body.newPassword);
-        } else {
-            let results = await admin.alter_user_role(roles[req.body.desiredRole], target.external_id);
-            //todo if results[0].errormsg is not null, echo the error.
-            //if target and origin are the same redirect to login instead, if role no longer admin.
-            if (target.external_id === admin.external_id && results[0].altered !== roles.admin) {
-                res.redirect('/loginuser?externalID=' + admin.external_id);
-                return;
-            }
+        let results = await admin.alter_user_role(roles[req.body.desiredRole], target.external_id);
+        //todo if results[0].errormsg is not null, echo the error.
+        //if target and origin are the same redirect to login instead, if role no longer admin.
+        if (target.external_id === admin.external_id && results[0].altered !== roles.admin) {
+            res.redirect('/loginuser?externalID=' + admin.external_id);
+            return;
         }
     }catch (e){
         console.log(e);
         //TODO display an error message for a role change failure.
     }
-    res.redirect('/adminBase?externalID='+ req.query.adminID);
+    res.redirect('/adminBase?externalID='+ admin.external_id);
+});
+
+/* POST page. */
+router.post('/password', async function(req, res, next) {
+    console.log(fileName + ".js: POST");
+    //TODO action
+    try{
+        admin.reset_password(target.external_id, req.body.newPassword);
+    }catch (e){
+        console.log(e);
+    }
+    res.redirect('/adminBase?externalID='+ admin.external_id);
 });
 
 module.exports = router;
