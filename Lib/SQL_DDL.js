@@ -377,40 +377,45 @@ const DBProcedureStatements = [
             "    set hashed_password = SHA1(CONCAT(unHashedPassword, @salt)), salt = @salt\n" +
             "    where external_id = externalID;\n" +
             "end;", name: "reset_password"},
-    alter_user_role= { statement: "create procedure if not exists alter_user_role(in targetRole int, in externalID int, out roleAltered bit(1),\n" +
-            "                                               out errormsg varchar(18))\n" +
+    alter_user_role= { statement: "create\n" +
+            "    definer = root@localhost procedure if not exists alter_user_role(IN targetRole int, IN externalID int, OUT roleAltered int,\n" +
+            "                                                       OUT errormsg varchar(64))\n" +
             "begin\n" +
-            "    set roleAltered = "+sqlBool.false+";\n" +
-            "    if targetRole in (select user_role_id from user_roles where role = '"+ userRoles[userRoles.admin] +"') then\n" +
-            "        if exists (select users.user_id, users.external_id from accounts inner join users on users.user_id = accounts.user_id where external_id = externalID and account_cents > 0) then\n" +
-            "            set roleAltered = "+sqlBool.false+";\n" +
-            "            set errormsg = 'User cannot be made an admin until all account balances are 0.';\n" +
-            "        else\n" +
+            "    set roleAltered = 1;\n" +
+            "    if targetRole not in (select users.user_role_id from users where external_id = externalID) then\n" +
+            "        if targetRole in (select user_role_id from user_roles where role = 'admin') then\n" +
+            "            if exists (select users.user_id, users.external_id from accounts inner join users on users.user_id = accounts.user_id where external_id = externalID and account_cents > 0) then\n" +
+            "                set roleAltered = 0;\n" +
+            "                set errormsg = 'User cannot be made an admin until all account balances are 0.';\n" +
+            "            else\n" +
+            "                update users\n" +
+            "                set user_role_id = (select user_role_id from user_roles where role = 'admin')\n" +
+            "                where users.external_id = externalID;\n" +
+            "                update accounts\n" +
+            "                set addressable = 0\n" +
+            "                where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
+            "            end if;\n" +
+            "        elseif targetRole in (select user_role_id from user_roles where role = 'customer') then\n" +
             "            update users\n" +
-            "            set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.admin]+"')\n" +
-            "            where users.external_id = externalID;\n" +
+            "            set user_role_id = (select user_role_id from user_roles where role = 'customer')\n" +
+            "            where external_id = externalID;\n" +
             "            update accounts\n" +
-            "            set addressable = "+sqlBool.false+"\n" +
+            "            set addressable = 1\n" +
             "            where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
-            "            set roleAltered = "+userRoles.admin+";\n" +
+            "        elseif targetRole in (select user_role_id from user_roles where role = 'employee') then\n" +
+            "            update users\n" +
+            "            set user_role_id = (select user_role_id from user_roles where role = 'employee')\n" +
+            "            where external_id = externalID;\n" +
+            "            update accounts\n" +
+            "            set addressable = 1\n" +
+            "            where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
+            "        else\n" +
+            "            set roleAltered = 1;\n" +
+            "            set errormsg = 'Invalid role.';\n" +
             "        end if;\n" +
-            "    elseif targetRole in (select user_role_id from user_roles where role = '"+userRoles[userRoles.customer]+"') then\n" +
-            "        update users\n" +
-            "        set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.customer]+"')\n" +
-            "        where external_id = externalID;\n" +
-            "        update accounts\n" +
-            "        set addressable = "+sqlBool.true+"\n" +
-            "        where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
-            "    elseif targetRole in (select user_role_id from user_roles where role = '"+userRoles[userRoles.employee]+"') then\n" +
-            "        update users\n" +
-            "        set user_role_id = (select user_role_id from user_roles where role = '"+userRoles[userRoles.employee]+"')\n" +
-            "        where external_id = externalID;\n" +
-            "        update accounts\n" +
-            "        set addressable = "+sqlBool.true+"\n" +
-            "        where (select user_id from users where external_id = externalID limit 1) = accounts.user_id;\n" +
-            "    else\n" +
-            "        set roleAltered = "+sqlBool.false+";\n" +
-            "        set errormsg = 'Invalid role.';\n" +
+            "        else \n" +
+            "            set roleAltered = 0;\n" +
+            "            set errormsg = 'User already belongs to selected role.';\n" +
             "    end if;\n" +
             "end;", name: "alter_user_role"},
     insert_user_role= { statement: "create procedure if not exists insert_user_role(in roleName varchar(16))\n" +

@@ -70,7 +70,7 @@ class BankUtils {
     }
 
 
-    static async verifyExists(external_id) {
+    static async verifyExists(external_id,req) {
         return await BankUtils.get_users_array()
             .then((users) => {
                 return users.contains({external_id: parseInt(external_id), user_role_id: roles.customer}, (a, b) => {
@@ -78,7 +78,6 @@ class BankUtils {
                 });
             })
             .catch((reason) => {
-                console.log(reason);
                 return false
             });
     }
@@ -105,7 +104,7 @@ class BankUtils {
         });
         session.receiving_user = await Customer.createRecipient(session.receiver_id).then((recipient) => {
             session.recipient_error = undefined;
-            session.receiver_id = recipient.external_id;
+            session.receiver_id = user.external_id;
             return recipient;
         })
             .catch((reason) => {
@@ -333,12 +332,18 @@ class Customer extends User {
 
     static async createRecipient(externalID) {
         return new Promise(async (resolve, reject)=>{
-            let userInfo = await User.get_user_info(externalID);
-            userInfo = userInfo[0];
-            if(userInfo[0].user_role_id === roles.admin) {
-                return reject("User "+ externalID + " is an admin and cannot send or receive money.");
+            try{
+                let userInfo = await User.get_user_info(externalID);
+                userInfo = userInfo[0];
+                if(userInfo[0].user_role_id === roles.admin) {
+                    return reject("User "+ externalID + " is an admin and cannot send or receive money.");
+                }
+                return resolve(new Customer(userInfo));
             }
-            return resolve(new Customer(userInfo));
+            catch (e){
+                console.log(e);
+                return reject("Specified user does not exist. Try again.");
+            }
         })
     }
 

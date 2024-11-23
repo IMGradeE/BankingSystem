@@ -25,7 +25,7 @@ router.get('/', async function (req, res, next) {
                 console.log(e.message);
             }
 
-            req.session.receiver_id = (await BankUtils.verifyExists(req.session.receiver_id)) ? req.session.receiver_id : req.session.user_object.current_user.external_id;
+
 
             return resolve(await BankUtils.renameMe(req.session, req.session.user_object.current_user));
         })
@@ -37,12 +37,6 @@ router.get('/', async function (req, res, next) {
     }
 });
 
-router.get("/password", (req, res) => {
-    req.session.user_object.current_user.page = 'password';
-    console.log('clicked password Reset href');
-    req.session.save(function (err) {res.redirect('/baseEmployeeAsCustomer')});
-
-})
 
 router.get("/savings", (req, res) => {
     req.session.user_object.current_user.current_account = req.session.user_object.current_user.accounts[0];
@@ -124,7 +118,8 @@ router.post('/submit', async function (req, res, next) {
     if (req.session.user_object.current_user.page === "transfers") {
         // not worried about whether someone wants to transfer money out of and back into the same account.
         x = await req.session.user_object.current_user.initiate_transfer(f.sendingAccount, f.receivingAccount, f.transferMemo, BankUtils.toCentsFromDollars(f.amount))
-        req.session.message = x.toString();
+        req.session.same_account = (!x)?"Sending account and receiving account cannot be the same.":undefined;
+        req.session.message_alt = x.toString();
     } else if (req.session.user_object.current_user.page === "deposit") {
         //call deposit
         x = await req.session.user_object.current_user.initiate_deposit(BankUtils.toCentsFromDollars(f.amount), f.receivingAccount);

@@ -22,8 +22,10 @@ router.post('/', async function(req, res, next) {
         if (authResults.idAuthed && authResults.passwordAuthed) {
             console.log("Credentials Authorized.");
             if (authResults.role === roles.admin) {
+
                 const query = encodeURIComponent(external_id);
-                res.redirect('/adminBase?externalID=' + query);
+                req.session.idAuthed = "true";
+                req.session.save(function (err) {res.redirect('/adminBase?externalID=' + query);});
             }else {
                 req.session.external_id = external_id;
                 req.session.user_role_id = authResults.role;

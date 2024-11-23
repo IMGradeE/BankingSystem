@@ -36,12 +36,37 @@ OPTIONS:
 				  <div class="text-center">
 					  <h4 class="text-primary">Admin Tools</h4>
 				  </div>
+				  <%if(session.message === "true"){%>
+					  <div>
+						  <p id="message" class="text-success">
+							  Success!
+						  </p>
+					  </div>
+				  <%session.message = ""%>
+				  <%}else if (session.message === "false"){%>
+					  <div>
+						  <p id="message" class="text-danger">
+							  Operation Failed!
+							  <%=(session.reason=== undefined)?"":session.reason%>
+						  </p>
+					  </div>
+				  <%session.reason = undefined%>
+				  <%session.message = ""%>
+				  <%}%>
 						<form method="post">
 							<div class="p-4">
 								<div class="mb-3">
 								<label for = "userID" class="form-label">User ID </label>
 									<input type="text" id="userID" name="userID" class="form-control" style="margin-left: 5px;">
 								</div>
+								<%if (session.idAuthed !== "true"){%>
+									<div>
+										<p id="message" class="text-danger">
+											External ID does not exist.
+										</p>
+									</div>
+								<%session.idAuthed = ""%>
+								<%}%>
 								<div class="input-group mb-3">
 									<div class="form-check">
 										<label for = "passwordReset" class="form-check-label">Reset Password</label>
@@ -53,7 +78,7 @@ OPTIONS:
 									<div class="form-check">
 										<label for = "alterRole" class="form-check-label">Alter User's Role</label>
 
-										<input type="radio" id="alterRole" name="adminAction" value="role" class="form-check-input">
+										<input required type="radio" id="alterRole" name="adminAction" value="role" class="form-check-input">
 									</div>
 								</div>
 							</div>

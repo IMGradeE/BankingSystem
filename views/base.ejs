@@ -73,12 +73,14 @@
 													Success!
 												</p>
 											</div>
+										<%session.message = ""%>
 										<%}else if (session.message === "false"){%>
 											<div>
 												<p id="message" class="text-danger">
 													Operation Failed!
 												</p>
 											</div>
+										<%session.message = ""%>
 										<%}%>
 										<%
 											let actionHeader;
@@ -98,12 +100,13 @@
 												<h4 style="margin-left: -10px"><%=actionHeader%></h4>
 												<div class="mb-3">
 													<%if(session.user_object.page === "transfers"){%>
+
 													<div class="mb-3">
 														<div>
 															<div class="row">
 																<label  for="receiverID" class="form-label text-secondary-emphasis">Receiver's UserID</label>
 																<div class="col-11">
-																	<input required form = "receiverForm"  class="form-control" type="text" id="receiverID" name="receiverID" value='<%=session.receiver_id%>' onclick="enableButton(event)">
+																	<input required form = "receiverForm"  class="form-control" type="text" id="receiverID" name="receiverID" value='<%=session.receiving_user.external_id%>' onclick="enableButton(event)">
 																</div>
 																<div class="col-1 align-text-top">
 																	<button form = "receiverForm" class="btn btn-secondary" type="submit" id = "postReceiverID" disabled>Submit</button>
@@ -144,6 +147,15 @@
 															<option value="<%=session.receiving_user.accounts[i].account_id%>"><%=session.receiving_user.accounts[i].account_type%></option>
 														<%}%>
 													</select>
+													<%}%>
+													<%if(session.message_alt === "false" && session.user_object.page === "transfers"){%>
+													<div>
+														<p class="text-danger">
+															<%=session.same_account%>
+														</p>
+													</div>
+													<%session.message_alt = undefined%>
+
 													<%}%>
 
 												</div>
